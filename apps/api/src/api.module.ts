@@ -17,6 +17,7 @@ import { AuthResolver } from './resolvers/auth.resolver';
     }),
     SharedModule.registerRmq('AUTH_SERVICE', 'AUTH'),
     SharedModule.registerRmq('MATH_SERVICE', 'MATH'),
+    SharedModule.registerRmq('PRODUCT_SERVICE', 'PRODUCT'),
     GraphQLModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -6,3 +6,4 @@ export * from './modules/mongodb.module';
 
 //Schemas
 export * from './schemas/user.schema';
+export * from './schemas/product.schema';
