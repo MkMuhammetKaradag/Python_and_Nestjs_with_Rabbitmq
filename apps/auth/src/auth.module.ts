@@ -2,7 +2,14 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigModule } from '@nestjs/config';
-import { SharedModule, SharedService } from '@app/shared';
+import {
+  MongoDBModule,
+  SharedModule,
+  SharedService,
+  User,
+  UserSchema,
+} from '@app/shared';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -10,6 +17,8 @@ import { SharedModule, SharedService } from '@app/shared';
       isGlobal: true,
     }),
     SharedModule,
+    MongoDBModule.forRoot('AUTH'),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [AuthController],
   providers: [

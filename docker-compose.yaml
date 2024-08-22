@@ -11,6 +11,10 @@ services:
       - '15672:15672'
     env_file:
       - .env
+  mongo:
+    image: mongo:latest
+    ports:
+      - '27017:27017'
   redis:
     image: redis
     env_file:
