@@ -2,6 +2,34 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type User {
+  _id: ID!
+  firstName: String!
+  lastName: String!
+  email: String!
+  password: String!
+  profilePhoto: Float
+  roles: [UserRole!]!
+}
+
+"""User roles"""
+enum UserRole {
+  ADMIN
+  USER
+}
+
 type Query {
   getQuery: String!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+}
+
+input CreateUserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  password: String!
+  roles: [UserRole!]! = [USER]
 }

@@ -4,9 +4,10 @@ import {
   Ctx,
   EventPattern,
   MessagePattern,
+  Payload,
   RmqContext,
 } from '@nestjs/microservices';
-import { SharedService } from '@app/shared';
+import { CreateUserInput, SharedService } from '@app/shared';
 
 @Controller()
 export class AuthController {
@@ -28,5 +29,18 @@ export class AuthController {
   @EventPattern('get_users_clg')
   async getUserClg(data: { userId: number; timestamp: Date }) {
     console.log('Received auth event:', data);
+  }
+
+  @MessagePattern({ cmd: 'create_user' })
+  async createUser(
+    @Ctx() context: RmqContext,
+    @Payload()
+    createUser: CreateUserInput,
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    const data = await this.authService.create(createUser);
+
+    return data;
   }
 }

@@ -7,3 +7,6 @@ export * from './modules/mongodb.module';
 //Schemas
 export * from './schemas/user.schema';
 export * from './schemas/product.schema';
+
+//InputTypes
+export * from './types/input/CreateUserInput';

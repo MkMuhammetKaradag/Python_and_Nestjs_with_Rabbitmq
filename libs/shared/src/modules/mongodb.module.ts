@@ -12,6 +12,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 export class MongoDBModule {
   static forRoot(
     dbName: string,
+    connectionName?: string,
     options: MongooseModuleOptions = {},
   ): DynamicModule {
     return {
@@ -20,8 +21,12 @@ export class MongoDBModule {
         MongooseModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: async (configService: ConfigService) => ({
+          connectionName,
+          useFactory: async (
+            configService: ConfigService,
+          ): Promise<MongooseModuleOptions> => ({
             uri: configService.get<string>(`MONGO_${dbName}_URI`),
+            // connectionName'i burada ekleyin
             ...options,
           }),
         }),
