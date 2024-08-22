@@ -1,11 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ApiController } from './api.controller';
 import { ApiService } from './api.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SharedModule } from '@app/shared';
 import { AuthController } from './contollers/auth.controller';
 import { MathController } from './contollers/math.controller';
-
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver } from '@nestjs/apollo';
+import { join } from 'path';
+import * as cookieParser from 'cookie-parser';
+import { AuthResolver } from './resolvers/auth.resolver';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -13,8 +17,47 @@ import { MathController } from './contollers/math.controller';
     }),
     SharedModule.registerRmq('AUTH_SERVICE', 'AUTH'),
     SharedModule.registerRmq('MATH_SERVICE', 'MATH'),
+    GraphQLModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+
+      driver: ApolloDriver,
+      useFactory: async (configService: ConfigService) => ({
+        playground: Boolean(configService.get('GRAPHQL_PLAYGROUND')),
+        autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+        uploads: false,
+
+        context: ({ req, res, connection }) => {
+          if (connection) {
+            return { req: connection.context, res };
+          }
+          return { req, res };
+        },
+        subscriptions: {
+          'subscriptions-transport-ws': {
+            onConnect: (connectionParams, webSocket, context) => {
+              const cookies = connectionParams.cookies
+                ? cookieParser.JSONCookies(connectionParams.cookies)
+                : {};
+
+              if (connectionParams.Authorization) {
+                return {
+                  req: {
+                    headers: {
+                      authorization: connectionParams.Authorization,
+                    },
+                    cookies: cookies,
+                  },
+                };
+              }
+              throw new Error('Missing auth token!');
+            },
+          },
+        },
+      }),
+    }),
   ],
   controllers: [ApiController, AuthController, MathController],
-  providers: [ApiService],
+  providers: [ApiService, AuthResolver],
 })
 export class ApiModule {}

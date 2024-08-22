@@ -20,13 +20,20 @@
     "test:e2e": "jest --config ./apps/nestjs-microservices-project/test/jest-e2e.json"
   },
   "dependencies": {
+    "@apollo/server": "^4.11.0",
+    "@nestjs/apollo": "^12.2.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/graphql": "^12.2.0",
     "@nestjs/microservices": "^10.4.1",
     "@nestjs/platform-express": "^10.0.0",
+    "@types/cookie-parser": "^1.4.7",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.4",
+    "cookie-parser": "^1.4.6",
+    "graphql": "^16.9.0",
+    "graphql-redis-subscriptions": "^2.6.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },

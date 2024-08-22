@@ -19,7 +19,7 @@ export class MathController {
           result: number;
         }>(pattern, payload),
       );
-      console.log(data);
+
       if (typeof data.result !== 'number') {
         throw new Error('Invalid response from Python service');
       }
