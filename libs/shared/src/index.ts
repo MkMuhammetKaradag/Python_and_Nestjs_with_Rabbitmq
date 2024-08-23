@@ -15,3 +15,11 @@ export * from './types/input/RegisterUserInput';
 export * from './types/input/ActivationUserInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
+export * from './types/object/LoginUserObject';
+
+//Guards
+export * from './guards/auth.guard';
+
+
+//decorators
+export * from './decorators/user.decorator';

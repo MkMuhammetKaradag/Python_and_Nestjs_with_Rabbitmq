@@ -1,13 +1,14 @@
 import {
   ActivationUserInput,
   CreateUserInput,
+  LoginUserInput,
   Product,
   ProductDocument,
   RegisterUserInput,
   User,
   UserDocument,
 } from '@app/shared';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -104,5 +105,106 @@ export class AuthService {
     const user = new this.userModel(activationData.user);
 
     return user.save();
+  }
+  async doesPasswordMatch(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(password, hashedPassword);
+  }
+  async validateUser(email: string, password: string): Promise<User> {
+    const existingUser = await this.userModel.findOne({ email });
+    if (!existingUser) {
+      throw new RpcException({
+        message: 'Invalid email or password',
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+
+    const doesPasswordMatch = await this.doesPasswordMatch(
+      password,
+      existingUser.password,
+    );
+    if (!doesPasswordMatch) {
+      throw new RpcException({
+        message: 'Invalid credentials!',
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+    }
+    return existingUser;
+  }
+  async loginUser(loginUser: LoginUserInput) {
+    const { email, password } = loginUser;
+
+    const user = await this.validateUser(email, password);
+    const payload = { email: user.email, sub: user._id };
+    const access_token = await this.jwtService.signAsync(payload);
+    const refresh_token = this.generateRefreshToken(user);
+    return { user, access_token, refresh_token };
+  }
+  private generateRefreshToken(user: User): string {
+    const payload = { email: user.email, sub: user._id };
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d', // Refresh token için 7 gün
+    });
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const payload = await this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+      console.log('access token için girdi');
+
+      const user = await this.userModel
+        .findById(payload.sub)
+        .select('email _id');
+
+      if (!user) {
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          statusCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+      const access_token = await this.jwtService.signAsync({
+        email: user.email,
+        sub: user._id,
+      });
+      return {
+        user,
+        access_token,
+      };
+    } catch (e) {
+      throw new RpcException({
+        message: 'Invalid refresh token',
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+    }
+  }
+
+  async verifyAcccessToken(jwt: string) {
+    if (!jwt) {
+      throw new RpcException({
+        message: 'Invalid credentials!',
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+    }
+    try {
+      const { email, sub, exp } = await this.jwtService.verifyAsync(jwt);
+
+      return {
+        user: {
+          email: email,
+          _id: sub,
+        },
+        exp,
+      };
+    } catch (error) {
+      throw new RpcException({
+        message: 'Invalid credentials!',
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+    }
   }
 }

@@ -10,6 +10,7 @@ import { ApolloDriver } from '@nestjs/apollo';
 import { join } from 'path';
 import * as cookieParser from 'cookie-parser';
 import { AuthResolver } from './resolvers/auth.resolver';
+import { UserResolver } from './resolvers/user.resolver';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -40,8 +41,9 @@ import { AuthResolver } from './resolvers/auth.resolver';
               const cookies = connectionParams.cookies
                 ? cookieParser.JSONCookies(connectionParams.cookies)
                 : {};
-
+              // console.log('sds', cookies);
               if (connectionParams.Authorization) {
+                console.log(connectionParams.Authorization);
                 return {
                   req: {
                     headers: {
@@ -59,6 +61,6 @@ import { AuthResolver } from './resolvers/auth.resolver';
     }),
   ],
   controllers: [ApiController, AuthController, MathController],
-  providers: [ApiService, AuthResolver],
+  providers: [ApiService, AuthResolver, UserResolver],
 })
 export class ApiModule {}

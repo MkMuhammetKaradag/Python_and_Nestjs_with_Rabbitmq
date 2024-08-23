@@ -8,11 +8,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
-import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
 
+import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(ApiModule);
   const configService = app.get(ConfigService);
+  app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
       exceptionFactory: (errors: ValidationError[]) => {

@@ -21,13 +21,20 @@ type RegisterUserObject {
   activationToken: String!
 }
 
+type LoginUserObject {
+  user: User
+  access_token: String!
+  refresh_token: String!
+}
+
 type Query {
   getQuery: String!
+  protectedQuery: String!
 }
 
 type Mutation {
   createUser(input: CreateUserInput!): User!
-  loginUser(input: LoginUserInput!): User!
+  loginUser(input: LoginUserInput!): LoginUserObject!
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
 }

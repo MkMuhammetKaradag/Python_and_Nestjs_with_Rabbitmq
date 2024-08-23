@@ -58,9 +58,9 @@ export class AuthController {
     @Payload() loginUser: LoginUserInput,
   ) {
     this.sharedService.acknowledgeMessage(context);
-    console.log(loginUser);
-    // const data = this.authService.login(loginUser);
-    // return data;
+
+    const data = this.authService.loginUser(loginUser);
+    return data;
   }
 
   @MessagePattern({
@@ -87,5 +87,35 @@ export class AuthController {
 
     const data = await this.authService.activationUser(avtivationUser);
     return data;
+  }
+
+  @MessagePattern({
+    cmd: 'verify_access_token',
+  })
+  async verifyAcccessToken(
+    @Ctx() context: RmqContext,
+    @Payload()
+    verifyAcccessToken: {
+      jwt: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    return this.authService.verifyAcccessToken(verifyAcccessToken.jwt);
+  }
+
+  @MessagePattern({
+    cmd: 'refresh_access_token',
+  })
+  async refreshAcccessToken(
+    @Ctx() context: RmqContext,
+    @Payload()
+    verifyAcccessToken: {
+      refreshToken: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    return this.authService.refreshAccessToken(verifyAcccessToken.refreshToken);
   }
 }

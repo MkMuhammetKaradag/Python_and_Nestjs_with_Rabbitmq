@@ -1,11 +1,12 @@
 import {
   ActivationUserInput,
   LoginUserInput,
+  LoginUserObject,
   RegisterUserInput,
   RegisterUserObject,
   User,
 } from '@app/shared';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateUserInput } from '../inputTypes/CreateUserInput';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -39,10 +40,11 @@ export class AuthResolver {
     return user;
   }
 
-  @Mutation(() => User)
-  async loginUser(@Args('input') input: LoginUserInput) {
+  @Mutation(() => LoginUserObject)
+  async loginUser(@Args('input') input: LoginUserInput, @Context() context) {
+    const { req, res } = context;
     try {
-      const data = await firstValueFrom<User>(
+      const data = await firstValueFrom<LoginUserObject>(
         this.authService.send(
           {
             cmd: 'login_user',
@@ -52,6 +54,11 @@ export class AuthResolver {
           },
         ),
       );
+      if (data.refresh_token && data.access_token) {
+        res.cookie('refresh_token', data.refresh_token);
+        res.cookie('access_token', data.access_token);
+      }
+
       return data;
     } catch (error) {
       throw new GraphQLError(error.message, {
