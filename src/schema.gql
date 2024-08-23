@@ -7,7 +7,6 @@ type User {
   firstName: String!
   lastName: String!
   email: String!
-  password: String!
   profilePhoto: Float
   roles: [UserRole!]!
 }
@@ -30,6 +29,7 @@ type Mutation {
   createUser(input: CreateUserInput!): User!
   loginUser(input: LoginUserInput!): User!
   registerUser(input: RegisterUserInput!): RegisterUserObject!
+  activationUser(input: ActivationUserInput!): User!
 }
 
 input CreateUserInput {
@@ -51,4 +51,9 @@ input RegisterUserInput {
   email: String!
   password: String!
   roles: [UserRole!]! = [USER]
+}
+
+input ActivationUserInput {
+  activationToken: String!
+  activationCode: String!
 }

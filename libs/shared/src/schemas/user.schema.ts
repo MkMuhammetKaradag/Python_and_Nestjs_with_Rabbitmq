@@ -1,4 +1,10 @@
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import {
+  Field,
+  HideField,
+  ID,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
@@ -14,7 +20,14 @@ registerEnumType(UserRole, {
   description: 'User roles', // Açıklama (opsiyonel)
 });
 
-@Schema()
+@Schema({
+  toJSON: {
+    transform: (doc, ret) => {
+      delete ret.password;
+      return ret;
+    },
+  },
+})
 @ObjectType() // GraphQL ObjectType olarak işaretleme
 export class User {
   @Field(() => ID)
@@ -34,7 +47,7 @@ export class User {
   email: string;
 
   @Prop({ required: true })
-  @Field()
+  @HideField() // GraphQL sorgularında gizleme
   password: string;
 
   @Prop()

@@ -8,6 +8,7 @@ import {
   RmqContext,
 } from '@nestjs/microservices';
 import {
+  ActivationUserInput,
   CreateUserInput,
   LoginUserInput,
   RegisterUserInput,
@@ -72,6 +73,19 @@ export class AuthController {
     this.sharedService.acknowledgeMessage(context);
 
     const data = await this.authService.registerUser(registerUser);
+    return data;
+  }
+
+  @MessagePattern({
+    cmd: 'activation_user',
+  })
+  async activationUser(
+    @Ctx() context: RmqContext,
+    @Payload() avtivationUser: ActivationUserInput,
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    const data = await this.authService.activationUser(avtivationUser);
     return data;
   }
 }

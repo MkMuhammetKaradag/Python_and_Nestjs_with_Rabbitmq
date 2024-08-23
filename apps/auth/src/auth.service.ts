@@ -1,4 +1,5 @@
 import {
+  ActivationUserInput,
   CreateUserInput,
   Product,
   ProductDocument,
@@ -76,8 +77,32 @@ export class AuthService {
     return { activationToken: createActivationToken };
   }
 
+  async activationUser(activationUser: ActivationUserInput) {
+    const { activationCode, activationToken } = activationUser;
+    const activationData: { user: RegisterUserInput; activationCode: string } =
+      (await this.jwtService.verifyAsync(activationToken)) as {
+        user: RegisterUserInput;
+        activationCode: string;
+      };
 
-  async activateUser(){
+    if (activationData.activationCode !== activationCode) {
+      throw new RpcException({
+        message: 'Invalid activation code',
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+    const existingUser = await this.userModel.findOne({
+      email: activationData.user.email,
+    });
+    if (existingUser) {
+      throw new RpcException({
+        message: 'User  already exist',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
 
+    const user = new this.userModel(activationData.user);
+
+    return user.save();
   }
 }

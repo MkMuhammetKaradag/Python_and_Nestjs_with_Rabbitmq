@@ -12,5 +12,6 @@ export * from './schemas/product.schema';
 export * from './types/input/CreateUserInput';
 export * from './types/input/LoginUserInput';
 export * from './types/input/RegisterUserInput';
+export * from './types/input/ActivationUserInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';

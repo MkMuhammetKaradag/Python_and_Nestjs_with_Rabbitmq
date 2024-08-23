@@ -1,4 +1,10 @@
-import { LoginUserInput, RegisterUserInput, RegisterUserObject, User } from '@app/shared';
+import {
+  ActivationUserInput,
+  LoginUserInput,
+  RegisterUserInput,
+  RegisterUserObject,
+  User,
+} from '@app/shared';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateUserInput } from '../inputTypes/CreateUserInput';
 import { Inject } from '@nestjs/common';
@@ -63,6 +69,27 @@ export class AuthResolver {
         this.authService.send(
           {
             cmd: 'register_user',
+          },
+          {
+            ...input,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Mutation(() => User)
+  async activationUser(@Args('input') input: ActivationUserInput) {
+    try {
+      const data = await firstValueFrom<User>(
+        this.authService.send(
+          {
+            cmd: 'activation_user',
           },
           {
             ...input,
