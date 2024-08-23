@@ -18,15 +18,34 @@ enum UserRole {
   USER
 }
 
+type RegisterUserObject {
+  activationToken: String!
+}
+
 type Query {
   getQuery: String!
 }
 
 type Mutation {
   createUser(input: CreateUserInput!): User!
+  loginUser(input: LoginUserInput!): User!
+  registerUser(input: RegisterUserInput!): RegisterUserObject!
 }
 
 input CreateUserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  password: String!
+  roles: [UserRole!]! = [USER]
+}
+
+input LoginUserInput {
+  email: String!
+  password: String!
+}
+
+input RegisterUserInput {
   firstName: String!
   lastName: String!
   email: String!

@@ -10,3 +10,7 @@ export * from './schemas/product.schema';
 
 //InputTypes
 export * from './types/input/CreateUserInput';
+export * from './types/input/LoginUserInput';
+export * from './types/input/RegisterUserInput';
+//ObjectTypes
+export * from './types/object/RegisterUserObject';

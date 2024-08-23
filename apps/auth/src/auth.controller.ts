@@ -7,7 +7,12 @@ import {
   Payload,
   RmqContext,
 } from '@nestjs/microservices';
-import { CreateUserInput, SharedService } from '@app/shared';
+import {
+  CreateUserInput,
+  LoginUserInput,
+  RegisterUserInput,
+  SharedService,
+} from '@app/shared';
 
 @Controller()
 export class AuthController {
@@ -41,6 +46,32 @@ export class AuthController {
 
     const data = await this.authService.create(createUser);
 
+    return data;
+  }
+
+  @MessagePattern({
+    cmd: 'login_user',
+  })
+  async loginUser(
+    @Ctx() context: RmqContext,
+    @Payload() loginUser: LoginUserInput,
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    console.log(loginUser);
+    // const data = this.authService.login(loginUser);
+    // return data;
+  }
+
+  @MessagePattern({
+    cmd: 'register_user',
+  })
+  async registerUser(
+    @Ctx() context: RmqContext,
+    @Payload() registerUser: RegisterUserInput,
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    const data = await this.authService.registerUser(registerUser);
     return data;
   }
 }

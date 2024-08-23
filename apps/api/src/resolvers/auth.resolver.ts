@@ -1,9 +1,10 @@
-import { User } from '@app/shared';
+import { LoginUserInput, RegisterUserInput, RegisterUserObject, User } from '@app/shared';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateUserInput } from '../inputTypes/CreateUserInput';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { GraphQLError } from 'graphql';
 
 @Resolver('auth')
 export class AuthResolver {
@@ -30,5 +31,49 @@ export class AuthResolver {
       ),
     );
     return user;
+  }
+
+  @Mutation(() => User)
+  async loginUser(@Args('input') input: LoginUserInput) {
+    try {
+      const data = await firstValueFrom<User>(
+        this.authService.send(
+          {
+            cmd: 'login_user',
+          },
+          {
+            ...input,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Mutation(() => RegisterUserObject)
+  async registerUser(@Args('input') input: RegisterUserInput) {
+    try {
+      const data = await firstValueFrom<{
+        activation_token: String;
+      }>(
+        this.authService.send(
+          {
+            cmd: 'register_user',
+          },
+          {
+            ...input,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
   }
 }
