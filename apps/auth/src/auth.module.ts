@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
+  EmailModule,
   MongoDBModule,
   Product,
   ProductSchema,
@@ -28,14 +29,9 @@ import { JwtModule } from '@nestjs/jwt';
       inject: [ConfigService],
     }),
     SharedModule,
+    EmailModule,
     MongoDBModule.forRoot('AUTH', 'auth'), // connectionName: 'authConnection'
     MongoDBModule.forRoot('PRODUCT', 'product'), // connectionName: 'productConnection'
-    // MongooseModule.forRoot('mongodb://localhost:27017/user', {
-    //   connectionName: 'auth',
-    // }),
-    // MongooseModule.forRoot('mongodb://localhost:27017/product', {
-    //   connectionName: 'product',
-    // }),
     MongooseModule.forFeature(
       [{ name: User.name, schema: UserSchema }],
       'auth', // authConnection bağlantısı ile ilişkilendir

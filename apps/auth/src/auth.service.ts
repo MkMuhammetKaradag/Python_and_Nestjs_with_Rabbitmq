@@ -1,6 +1,7 @@
 import {
   ActivationUserInput,
   CreateUserInput,
+  EmailService,
   LoginUserInput,
   Product,
   ProductDocument,
@@ -23,6 +24,8 @@ export class AuthService {
     private productModel: Model<ProductDocument>, // PRODUCT veritabanından Product modeli
 
     private readonly jwtService: JwtService,
+
+    private readonly emailService: EmailService,
   ) {}
   getHello(): string {
     return 'Hello World! auth users';
@@ -54,6 +57,14 @@ export class AuthService {
         expiresIn: '5m',
       },
     );
+
+    this.emailService.sendMail({
+      email:user.email,
+      subject: 'activate code',
+      template: './activation-mail',
+      name: user.firstName + user.lastName,
+      activationCode,
+    });
 
     return token;
   }
