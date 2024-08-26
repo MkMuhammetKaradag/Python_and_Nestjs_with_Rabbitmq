@@ -2,10 +2,12 @@
 export * from './modules/shared.module';
 export * from './modules/mongodb.module';
 export * from './modules/email.module';
+export * from './modules/cloudinary.module';
 
 //services
 export * from './services/shared.service';
 export * from './services/email.service';
+export * from './services/cloudinary.service';
 
 //Schemas
 export * from './schemas/user.schema';
@@ -19,9 +21,12 @@ export * from './types/input/CreateUserInput';
 export * from './types/input/LoginUserInput';
 export * from './types/input/RegisterUserInput';
 export * from './types/input/ActivationUserInput';
+export * from './types/input/CreatePostInput';
+export * from './types/input/SignUrlInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';
+export * from './types/object/SignUrlObject';
 
 //Guards
 export * from './guards/auth.guard';

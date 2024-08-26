@@ -54,6 +54,13 @@ type LoginUserObject {
   refresh_token: String!
 }
 
+type SignUrlOutput {
+  signature: String!
+  timestamp: Float!
+  cloudName: String!
+  apiKey: String!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -65,6 +72,8 @@ type Mutation {
   loginUser(input: LoginUserInput!): LoginUserObject!
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
+  createPost(input: CreatePostInput!): String!
+  getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
 }
 
 input CreateUserInput {
@@ -91,4 +100,25 @@ input RegisterUserInput {
 input ActivationUserInput {
   activationToken: String!
   activationCode: String!
+}
+
+input CreatePostInput {
+  title: String!
+  status: PostStatus = DRAFT
+  media: [CreateMediaInput!]!
+}
+
+"""Status of the post"""
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+}
+
+input CreateMediaInput {
+  url: String!
+  type: MediaType!
+}
+
+input SignUrlInput {
+  publicId: String!
 }

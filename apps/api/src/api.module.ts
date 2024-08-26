@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ApiController } from './api.controller';
 import { ApiService } from './api.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SharedModule } from '@app/shared';
+import { CloudinaryModule, SharedModule } from '@app/shared';
 import { AuthController } from './contollers/auth.controller';
 import { MathController } from './contollers/math.controller';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -11,12 +11,16 @@ import { join } from 'path';
 import * as cookieParser from 'cookie-parser';
 import { AuthResolver } from './resolvers/auth.resolver';
 import { UserResolver } from './resolvers/user.resolver';
+import { PostResolver } from './resolvers/post.resolver';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    CloudinaryModule,
     SharedModule.registerRmq('AUTH_SERVICE', 'AUTH'),
+    SharedModule.registerRmq('USER_SERVICE', 'USER'),
+    SharedModule.registerRmq('POST_SERVICE', 'POST'),
     SharedModule.registerRmq('MATH_SERVICE', 'MATH'),
     SharedModule.registerRmq('PRODUCT_SERVICE', 'PRODUCT'),
     GraphQLModule.forRootAsync({
@@ -61,6 +65,6 @@ import { UserResolver } from './resolvers/user.resolver';
     }),
   ],
   controllers: [ApiController, AuthController, MathController],
-  providers: [ApiService, AuthResolver, UserResolver],
+  providers: [ApiService, AuthResolver, UserResolver, PostResolver],
 })
 export class ApiModule {}
