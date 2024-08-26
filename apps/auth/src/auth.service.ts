@@ -59,7 +59,7 @@ export class AuthService {
     );
 
     this.emailService.sendMail({
-      email:user.email,
+      email: user.email,
       subject: 'activate code',
       template: './activation-mail',
       name: user.firstName + user.lastName,
@@ -206,8 +206,8 @@ export class AuthService {
 
       return {
         user: {
-          email: email,
           _id: sub,
+          email: email,
         },
         exp,
       };
@@ -217,5 +217,24 @@ export class AuthService {
         statusCode: HttpStatus.UNAUTHORIZED,
       });
     }
+  }
+
+  async getMe(_id: string) {
+    const user = await this.getUserId(_id);
+    if (!user) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    return user;
+  }
+  
+  async getUserId(_id: string) {
+    return await this.userModel.findOne({
+      _id,
+      deletedAt: { $exists: false },
+    });
   }
 }

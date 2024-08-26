@@ -1,0 +1,78 @@
+import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+import { Tag } from './tag.schema';
+
+export type PostDocument = Post & Document;
+
+export enum PostStatus {
+  PUBLISHED = 'published',
+  DRAFT = 'draft',
+}
+
+registerEnumType(PostStatus, {
+  name: 'PostStatus',
+  description: 'Status of the post',
+});
+
+export enum MediaType {
+  IMAGE = 'image',
+  VIDEO = 'video',
+}
+
+registerEnumType(MediaType, {
+  name: 'MediaType',
+  description: 'Type of media content',
+});
+
+@ObjectType()
+export class Media {
+  @Field(() => String)
+  @Prop({ required: true })
+  url: string; // Medya dosyasının URL'si
+
+  @Field(() => MediaType)
+  @Prop({ required: true, enum: MediaType })
+  type: MediaType; // Medya türü (video veya fotoğraf)
+
+  @Field({ nullable: true })
+  @Prop()
+  caption?: string; // Medya için açıklama (isteğe bağlı)
+}
+
+@Schema({
+  timestamps: true, // createdAt ve updatedAt alanları otomatik eklenir
+})
+@ObjectType()
+export class Post {
+  @Field(() => ID)
+  _id: string;
+
+  @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
+  @Field(() => ID)
+  userId: string; // Kullanıcının ID'sini referans alır
+
+  @Prop({ type: [Media], required: true })
+  @Field(() => [Media]) // Birden fazla medya içeriği olabilir
+  media: Media[]; // Medya içeriği (video veya fotoğraf)
+
+  @Prop({ required: true })
+  @Field()
+  title: string; // Paylaşım başlığı
+
+  @Prop({ type: String, enum: PostStatus, default: PostStatus.DRAFT })
+  @Field(() => PostStatus)
+  status: PostStatus; // Paylaşımın durumu
+
+  @Field()
+  createdAt: string;
+
+  @Field()
+  updatedAt: string;
+
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Tag' }] })
+  @Field(() => [Tag], { nullable: true }) // Paylaşımın etiketleri
+  tags: Types.ObjectId[];
+}
+export const PostSchema = SchemaFactory.createForClass(Post);

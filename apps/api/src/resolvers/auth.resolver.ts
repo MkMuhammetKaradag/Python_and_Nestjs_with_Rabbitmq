@@ -1,5 +1,7 @@
 import {
   ActivationUserInput,
+  AuthGuard,
+  CurrentUser,
   LoginUserInput,
   LoginUserObject,
   RegisterUserInput,
@@ -8,7 +10,7 @@ import {
 } from '@app/shared';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateUserInput } from '../inputTypes/CreateUserInput';
-import { Inject } from '@nestjs/common';
+import { Inject, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
@@ -100,6 +102,42 @@ export class AuthResolver {
           },
           {
             ...input,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Query(() => User)
+  @UseGuards(AuthGuard)
+  async getMe(
+    @CurrentUser()
+    user: {
+      _id: string;
+      email: string;
+    },
+    @Context() context,
+  ) {
+    // const { req, res } = context;
+    // console.log('req.user', req.user);
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<User>(
+        this.authService.send(
+          {
+            cmd: 'get_me',
+          },
+          {
+            userId: user._id,
           },
         ),
       );

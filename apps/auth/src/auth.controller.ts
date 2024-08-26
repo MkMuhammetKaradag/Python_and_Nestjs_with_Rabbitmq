@@ -118,4 +118,18 @@ export class AuthController {
 
     return this.authService.refreshAccessToken(verifyAcccessToken.refreshToken);
   }
+
+  @MessagePattern({
+    cmd: 'get_me',
+  })
+  asyncGetMe(
+    @Ctx() context: RmqContext,
+    @Payload()
+    getMe: {
+      userId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.getMe(getMe.userId);
+  }
 }

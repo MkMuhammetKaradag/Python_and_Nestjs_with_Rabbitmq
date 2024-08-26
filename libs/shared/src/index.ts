@@ -5,11 +5,14 @@ export * from './modules/email.module';
 
 //services
 export * from './services/shared.service';
-export * from "./services/email.service"
+export * from './services/email.service';
 
 //Schemas
 export * from './schemas/user.schema';
 export * from './schemas/product.schema';
+export * from './schemas/interest.schema';
+export * from './schemas/post.schema';
+export * from './schemas/tag.schema';
 
 //InputTypes
 export * from './types/input/CreateUserInput';

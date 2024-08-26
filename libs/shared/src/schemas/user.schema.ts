@@ -6,7 +6,8 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { Interest } from './interest.schema';
 
 export type UserDocument = User & Document;
 export enum UserRole {
@@ -27,6 +28,7 @@ registerEnumType(UserRole, {
       return ret;
     },
   },
+  timestamps: true, // Otomatik olarak createdAt ve updatedAt alanlarını ekler
 })
 @ObjectType() // GraphQL ObjectType olarak işaretleme
 export class User {
@@ -57,6 +59,25 @@ export class User {
   @Prop({ type: [String], enum: UserRole, default: [UserRole.USER] })
   @Field(() => [UserRole]) // GraphQL için enum dizisi olarak tanımlama
   roles: UserRole[];
+
+  @Prop({ default: false })
+  @Field()
+  isDeleted: boolean;
+
+  @Prop({ nullable: true })
+  @Field(() => String, { nullable: true }) // Boş olabilir
+  deletedAt?: Date;
+
+  @Field() // GraphQL alanı olarak işaretleme
+  createdAt: string;
+
+  @Field() // GraphQL alanı olarak işaretleme
+  updatedAt: string;
+
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Interest' }] })
+  @Field(() => [Interest], { nullable: true }) // Kullanıcının ilgi alanları
+  interests: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

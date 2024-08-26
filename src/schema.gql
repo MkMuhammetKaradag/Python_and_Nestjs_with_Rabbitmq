@@ -2,6 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Interest {
+  _id: ID!
+  name: String!
+}
+
 type User {
   _id: ID!
   firstName: String!
@@ -9,12 +14,34 @@ type User {
   email: String!
   profilePhoto: Float
   roles: [UserRole!]!
+  isDeleted: Boolean!
+  deletedAt: String
+  createdAt: String!
+  updatedAt: String!
+  interests: [Interest!]
 }
 
 """User roles"""
 enum UserRole {
   ADMIN
   USER
+}
+
+type Tag {
+  _id: ID!
+  name: String!
+}
+
+type Media {
+  url: String!
+  type: MediaType!
+  caption: String
+}
+
+"""Type of media content"""
+enum MediaType {
+  IMAGE
+  VIDEO
 }
 
 type RegisterUserObject {
@@ -29,6 +56,7 @@ type LoginUserObject {
 
 type Query {
   getQuery: String!
+  getMe: User!
   protectedQuery: String!
 }
 
