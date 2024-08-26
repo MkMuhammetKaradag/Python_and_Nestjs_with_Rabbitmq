@@ -5,10 +5,13 @@ import {
   CloudinaryService,
   CreatePostInput,
   CurrentUser,
+  Post,
   SignUrlInput,
   SignUrlOutput,
 } from '@app/shared';
 import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+import { GraphQLError } from 'graphql';
 
 @Resolver('Post')
 export class PostResolver {
@@ -18,15 +21,35 @@ export class PostResolver {
 
     private readonly cloudinaryService: CloudinaryService,
   ) {}
-  @Mutation(() => String)
+  @Mutation(() => Post)
   @UseGuards(AuthGuard)
   async createPost(
     @Args('input') input: CreatePostInput,
     @CurrentUser() user: any,
   ) {
-    // console.log('clear', user); // Bu, kimliği doğrulanmış kullanıcının bilgilerini içerecek
-    // console.log('input', input);
-    return `Merhaba , bu veri korunuyor! post oluşturma işlemi `;
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const post = await firstValueFrom<Post>(
+        this.postService.send(
+          {
+            cmd: 'create_post',
+          },
+          {
+            userId: user._id,
+            ...input,
+          },
+        ),
+      );
+      return post;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
   }
 
   @Mutation(() => SignUrlOutput)
@@ -36,11 +59,12 @@ export class PostResolver {
   ): Promise<SignUrlOutput> {
     const { signature, timestamp } =
       await this.cloudinaryService.generateSignature(input.publicId, 'posts');
+    console.log(signature, timestamp);
     return {
       signature,
       timestamp,
       cloudName: process.env.CLD_CLOUD_NAME,
-      apiKey: process.env.CLD_API_SECRET,
+      apiKey: process.env.CLD_API_KEY,
     };
   }
 }

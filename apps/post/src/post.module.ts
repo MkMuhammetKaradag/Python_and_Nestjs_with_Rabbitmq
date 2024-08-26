@@ -8,6 +8,8 @@ import {
   PostSchema,
   SharedModule,
   SharedService,
+  User,
+  UserSchema,
 } from '@app/shared';
 import { MongooseModule } from '@nestjs/mongoose';
 
@@ -17,10 +19,15 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true,
     }),
     SharedModule,
+    MongoDBModule.forRoot('USER', 'user'), // connectionName: 'authConnection'
     MongoDBModule.forRoot('POST', 'post'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
       [{ name: Post.name, schema: PostSchema }],
       'post', // Associate with userConnection
+    ),
+    MongooseModule.forFeature(
+      [{ name: User.name, schema: UserSchema }],
+      'user', // authConnection bağlantısı ile ilişkilendir
     ),
   ],
   controllers: [PostController],

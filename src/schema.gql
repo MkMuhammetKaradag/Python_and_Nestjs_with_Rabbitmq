@@ -44,6 +44,23 @@ enum MediaType {
   VIDEO
 }
 
+type Post {
+  _id: ID!
+  userId: ID!
+  media: [Media!]!
+  title: String!
+  status: PostStatus!
+  createdAt: String!
+  updatedAt: String!
+  tags: [Tag!]
+}
+
+"""Status of the post"""
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+}
+
 type RegisterUserObject {
   activationToken: String!
 }
@@ -72,7 +89,7 @@ type Mutation {
   loginUser(input: LoginUserInput!): LoginUserObject!
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
-  createPost(input: CreatePostInput!): String!
+  createPost(input: CreatePostInput!): Post!
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
 }
 
@@ -104,14 +121,7 @@ input ActivationUserInput {
 
 input CreatePostInput {
   title: String!
-  status: PostStatus = DRAFT
   media: [CreateMediaInput!]!
-}
-
-"""Status of the post"""
-enum PostStatus {
-  PUBLISHED
-  DRAFT
 }
 
 input CreateMediaInput {

@@ -23,10 +23,17 @@ export class PostController {
     @Ctx() context: RmqContext,
     @Payload()
     createPost: {
+      userId: string;
       title: string;
+      medis: [
+        {
+          url: string;
+          type: string;
+        },
+      ];
     },
   ) {
     this.sharedService.acknowledgeMessage(context);
-    return createPost.title;
+    return await this.postService.createPost(createPost);
   }
 }
