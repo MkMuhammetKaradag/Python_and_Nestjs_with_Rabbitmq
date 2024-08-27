@@ -1,6 +1,7 @@
 import {
   Comment,
   CommentDocument,
+  CreateCommentInput,
   Like,
   LikeDocument,
   Post,
@@ -14,6 +15,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { StringifyOptions } from 'querystring';
 
 @Injectable()
 export class PostService {
@@ -67,6 +69,11 @@ export class PostService {
           path: 'likes',
           select: '_id',
           model: 'Like',
+        })
+        .populate({
+          path: 'comments',
+          select: '_id content createdAt ',
+          model: 'Comment',
         })
         .exec();
       console.log(post);
@@ -187,5 +194,34 @@ export class PostService {
         error: error.message,
       });
     }
+  }
+
+  async createComment(createCommnetData: {
+    userId: string;
+    postId: string;
+    content: string;
+  }) {
+    const post = await this.postModel.findById(createCommnetData.postId);
+    const user = await this.userModel.findById(createCommnetData.userId);
+
+    if (!post || !user) {
+      throw new RpcException({
+        message: 'User or Post Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    const newComment = new this.postCommentModel({
+      user: createCommnetData.userId,
+      post: createCommnetData.postId,
+      content: createCommnetData.content,
+    });
+    const savedComment = await newComment.save();
+    await this.postModel.findByIdAndUpdate(
+      createCommnetData.postId,
+      { $addToSet: { comments: savedComment._id } },
+      { new: true },
+    );
+
+    return savedComment
   }
 }

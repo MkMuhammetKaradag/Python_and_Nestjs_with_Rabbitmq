@@ -109,4 +109,20 @@ export class PostController {
     this.sharedService.acknowledgeMessage(context);
     return await this.postService.removeLikePost(removeLikePost);
   }
+
+  @MessagePattern({
+    cmd: 'create_comment',
+  })
+  async createComment(
+    @Ctx() context: RmqContext,
+    @Payload()
+    createComment: {
+      userId: string;
+      postId: string;
+      content: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.createComment(createComment);
+  }
 }

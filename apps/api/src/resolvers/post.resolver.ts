@@ -3,6 +3,8 @@ import { Inject, UseGuards } from '@nestjs/common';
 import {
   AuthGuard,
   CloudinaryService,
+  Comment,
+  CreateCommentInput,
   CreatePostInput,
   CurrentUser,
   Like,
@@ -144,6 +146,40 @@ export class PostResolver {
         ),
       );
       return like;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Mutation(() => Comment)
+  @UseGuards(AuthGuard)
+  async createComment(
+    @Args('input') input: CreateCommentInput,
+    @CurrentUser() user: any,
+  ): Promise<Comment> {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to comment a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+
+    try {
+      const comment = await firstValueFrom<Comment>(
+        this.postService.send(
+          {
+            cmd: 'create_comment',
+          },
+          {
+            userId: user._id,
+            ...input,
+          },
+        ),
+      );
+      return comment;
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: {

@@ -25,11 +25,13 @@ export * from './types/input/RegisterUserInput';
 export * from './types/input/ActivationUserInput';
 export * from './types/input/CreatePostInput';
 export * from './types/input/SignUrlInput';
+export * from './types/input/CreateCommentInput';
+export * from './types/input/UpdateCommentInput ';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';
 export * from './types/object/SignUrlObject';
-export * from "./types/object/RemoveLikeObject"
+export * from './types/object/RemoveLikeObject';
 
 //Guards
 export * from './guards/auth.guard';

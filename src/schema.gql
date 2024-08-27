@@ -61,8 +61,10 @@ type Comment {
   user: User!
   post: Post!
   content: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
+  isDeleted: Boolean!
+  deletedAt: String
+  createdAt: String!
+  updatedAt: String!
 }
 
 type Post {
@@ -122,6 +124,7 @@ type Mutation {
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
   addLikePost(postId: String!): Like!
   removeLikePost(postId: String!): RemoveLikeObject!
+  createComment(input: CreateCommentInput!): Comment!
 }
 
 input CreateUserInput {
@@ -162,4 +165,9 @@ input CreateMediaInput {
 
 input SignUrlInput {
   publicId: String!
+}
+
+input CreateCommentInput {
+  postId: ID!
+  content: String!
 }

@@ -23,11 +23,19 @@ export class Comment {
   @Field()
   content: string;
 
+  @Prop({ default: false })
   @Field()
-  createdAt: Date;
+  isDeleted: boolean;
+
+  @Prop({ nullable: true })
+  @Field(() => String, { nullable: true }) // Boş olabilir
+  deletedAt?: Date;
 
   @Field()
-  updatedAt: Date;
+  createdAt: string;
+
+  @Field()
+  updatedAt: string;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);
