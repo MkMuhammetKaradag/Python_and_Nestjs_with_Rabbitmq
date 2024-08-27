@@ -94,4 +94,19 @@ export class PostController {
     this.sharedService.acknowledgeMessage(context);
     return await this.postService.addLikePost(addLikePost);
   }
+
+  @MessagePattern({
+    cmd: 'remove_like_post',
+  })
+  async removeLikePost(
+    @Ctx() context: RmqContext,
+    @Payload()
+    removeLikePost: {
+      userId: string;
+      postId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.removeLikePost(removeLikePost);
+  }
 }

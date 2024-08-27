@@ -29,6 +29,7 @@ export * from './types/input/SignUrlInput';
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';
 export * from './types/object/SignUrlObject';
+export * from "./types/object/RemoveLikeObject"
 
 //Guards
 export * from './guards/auth.guard';

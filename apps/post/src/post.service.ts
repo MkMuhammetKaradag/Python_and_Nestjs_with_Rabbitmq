@@ -60,6 +60,10 @@ export class PostService {
       const post = await this.postModel
         .findById(postId)
         .populate({
+          path: 'user',
+          select: '_id profilPhoto firstName lastName',
+        })
+        .populate({
           path: 'likes',
           select: '_id',
           model: 'Like',
@@ -137,6 +141,51 @@ export class PostService {
         });
       }
       throw error; // Diğer hataları fırlat
+    }
+  }
+
+  async removeLikePost(removeData: { postId: string; userId: string }) {
+    const post = await this.postModel.findById(removeData.postId);
+    const user = await this.userModel.findById(removeData.userId);
+
+    if (!post || !user) {
+      throw new RpcException({
+        message: 'User or Post Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    try {
+      // Like'ı bul
+      const like = await this.postLikeModel.findOne({
+        user: removeData.userId,
+        post: removeData.postId,
+      });
+
+      if (!like) {
+        throw new RpcException({
+          message: 'Like not found',
+          statusCode: HttpStatus.NOT_FOUND,
+        });
+      }
+
+      // Like'ı sil
+      await this.postLikeModel.findByIdAndDelete(like._id);
+
+      // Post'un likes dizisinden like'ı kaldır
+      await this.postModel.findByIdAndUpdate(
+        removeData.postId,
+        { $pull: { likes: like._id } },
+        { new: true },
+      );
+
+      return { success: true, message: 'Like removed successfully' };
+    } catch (error) {
+      throw new RpcException({
+        message: 'Error removing like',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: error.message,
+      });
     }
   }
 }

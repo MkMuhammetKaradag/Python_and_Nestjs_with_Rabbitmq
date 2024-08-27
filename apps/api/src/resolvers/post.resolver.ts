@@ -7,6 +7,7 @@ import {
   CurrentUser,
   Like,
   Post,
+  RemoveLikeObject,
   SignUrlInput,
   SignUrlOutput,
 } from '@app/shared';
@@ -102,6 +103,39 @@ export class PostResolver {
         this.postService.send(
           {
             cmd: 'add_like_post',
+          },
+          {
+            postId: postId,
+            userId: user._id,
+          },
+        ),
+      );
+      return like;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Mutation(() => RemoveLikeObject)
+  @UseGuards(AuthGuard)
+  async removeLikePost(
+    @Args('postId') postId: string,
+    @CurrentUser() user: any,
+  ): Promise<RemoveLikeObject> {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to like a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+    try {
+      const like = await firstValueFrom<RemoveLikeObject>(
+        this.postService.send(
+          {
+            cmd: 'remove_like_post',
           },
           {
             postId: postId,
