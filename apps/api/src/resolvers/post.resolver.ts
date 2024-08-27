@@ -5,6 +5,7 @@ import {
   CloudinaryService,
   CreatePostInput,
   CurrentUser,
+  Like,
   Post,
   SignUrlInput,
   SignUrlOutput,
@@ -84,6 +85,36 @@ export class PostResolver {
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: { ...error },
+      });
+    }
+  }
+
+  @Mutation(() => Like)
+  @UseGuards(AuthGuard)
+  async addLikePost(@Args('postId') postId: string, @CurrentUser() user: any) {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to like a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+    try {
+      const like = await firstValueFrom<Like>(
+        this.postService.send(
+          {
+            cmd: 'add_like_post',
+          },
+          {
+            postId: postId,
+            userId: user._id,
+          },
+        ),
+      );
+      return like;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
       });
     }
   }

@@ -1,4 +1,5 @@
-import { MediaType } from '@app/shared/schemas/post.schema';
+
+import { MediaType } from '@app/shared/schemas/media.object';
 import { Field, InputType, ID } from '@nestjs/graphql';
 
 @InputType()

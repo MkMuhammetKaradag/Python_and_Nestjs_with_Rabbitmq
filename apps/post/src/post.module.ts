@@ -3,6 +3,10 @@ import { PostController } from './post.controller';
 import { PostService } from './post.service';
 import { ConfigModule } from '@nestjs/config';
 import {
+  Comment,
+  CommentSchema,
+  Like,
+  LikeSchema,
   MongoDBModule,
   Post,
   PostSchema,
@@ -25,6 +29,8 @@ import { MongooseModule } from '@nestjs/mongoose';
       [
         { name: Post.name, schema: PostSchema },
         { name: User.name, schema: UserSchema },
+        { name: Like.name, schema: LikeSchema },
+        { name: Comment.name, schema: CommentSchema },
       ],
       'post', // Associate with userConnection
     ),

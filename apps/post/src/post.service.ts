@@ -1,4 +1,8 @@
 import {
+  Comment,
+  CommentDocument,
+  Like,
+  LikeDocument,
   Post,
   PostDocument,
   Product,
@@ -21,6 +25,10 @@ export class PostService {
 
     @InjectModel(User.name, 'post')
     private postUserModel: Model<UserDocument>,
+    @InjectModel(Like.name, 'post')
+    private postLikeModel: Model<LikeDocument>,
+    @InjectModel(Comment.name, 'post')
+    private postCommentModel: Model<CommentDocument>,
   ) {}
   async createPost(createPost: {
     userId: string;
@@ -48,12 +56,24 @@ export class PostService {
   }
 
   async getPost(postId: string) {
-    const post = await this.postModel.findById(postId).populate({
-      path: 'user',
-      select: 'firstName _id lastName profilePhoto',
-    });
-
-    return post;
+    try {
+      const post = await this.postModel
+        .findById(postId)
+        .populate({
+          path: 'likes',
+          select: '_id',
+          model: 'Like',
+        })
+        .exec();
+      console.log(post);
+      return post;
+    } catch (error) {
+      console.log(error);
+      throw new RpcException({
+        message: 'Post Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
   }
 
   async createUser({
@@ -81,5 +101,42 @@ export class PostService {
     });
     await user.save();
     console.log('created user post ');
+  }
+
+  async addLikePost(addLike: { postId: string; userId: string }) {
+    const post = await this.postModel.findById(addLike.postId);
+    const user = await this.userModel.findById(addLike.userId);
+
+    if (!post || !user) {
+      throw new RpcException({
+        message: 'User or Post Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    try {
+      const like = new this.postLikeModel({
+        user: addLike.userId,
+        post: addLike.postId,
+      });
+
+      const savedLike = await like.save();
+      // Post'un likes alanını güncelle
+      await this.postModel.findByIdAndUpdate(
+        addLike.postId,
+        { $addToSet: { likes: savedLike._id } },
+        { new: true },
+      );
+      return savedLike;
+    } catch (error) {
+      if (error.code === 11000) {
+        // Duplicate key error code
+        throw new RpcException({
+          message: 'User has already liked this post',
+          statusCode: HttpStatus.CONFLICT,
+        });
+      }
+      throw error; // Diğer hataları fırlat
+    }
   }
 }

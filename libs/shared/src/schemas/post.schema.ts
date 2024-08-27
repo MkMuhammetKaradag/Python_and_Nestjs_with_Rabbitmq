@@ -9,6 +9,9 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Tag } from './tag.schema';
 import { User } from './user.schema';
+import { Media } from './media.object';
+import { Like } from './like.schema';
+import { Comment } from './comment.schema';
 
 export type PostDocument = Post & Document;
 
@@ -21,31 +24,6 @@ registerEnumType(PostStatus, {
   name: 'PostStatus',
   description: 'Status of the post',
 });
-
-export enum MediaType {
-  IMAGE = 'image',
-  VIDEO = 'video',
-}
-
-registerEnumType(MediaType, {
-  name: 'MediaType',
-  description: 'Type of media content',
-});
-
-@ObjectType()
-export class Media {
-  @Field(() => String)
-  @Prop({ required: true })
-  url: string; // Medya dosyasının URL'si
-
-  @Field(() => MediaType)
-  @Prop({ required: true, enum: MediaType })
-  type: MediaType; // Medya türü (video veya fotoğraf)
-
-  @Field({ nullable: true })
-  @Prop()
-  caption?: string; // Medya için açıklama (isteğe bağlı)
-}
 
 @Schema({
   timestamps: true, // createdAt ve updatedAt alanları otomatik eklenir
@@ -80,5 +58,13 @@ export class Post {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Tag' }] })
   @Field(() => [Tag], { nullable: true }) // Paylaşımın etiketleri
   tags: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Like' }] })
+  @Field(() => [Like], { nullable: true })
+  likes: Types.ObjectId[] | Like[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Comment' }] })
+  @Field(() => [Comment], { nullable: true })
+  comments: Types.ObjectId[];
 }
 export const PostSchema = SchemaFactory.createForClass(Post);

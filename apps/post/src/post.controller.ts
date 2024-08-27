@@ -79,4 +79,19 @@ export class PostController {
     });
     this.sharedService.acknowledgeMessage(context);
   }
+
+  @MessagePattern({
+    cmd: 'add_like_post',
+  })
+  async addLikePost(
+    @Ctx() context: RmqContext,
+    @Payload()
+    addLikePost: {
+      userId: string;
+      postId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.addLikePost(addLikePost);
+  }
 }

@@ -44,6 +44,27 @@ enum MediaType {
   VIDEO
 }
 
+type Like {
+  _id: ID!
+  user: User!
+  post: Post!
+  createdAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Comment {
+  _id: ID!
+  user: User!
+  post: Post!
+  content: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type Post {
   _id: ID!
   user: User!
@@ -53,6 +74,8 @@ type Post {
   createdAt: String!
   updatedAt: String!
   tags: [Tag!]
+  likes: [Like!]
+  comments: [Comment!]
 }
 
 """Status of the post"""
@@ -92,6 +115,7 @@ type Mutation {
   activationUser(input: ActivationUserInput!): User!
   createPost(input: CreatePostInput!): Post!
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
+  addLikePost(postId: String!): Like!
 }
 
 input CreateUserInput {

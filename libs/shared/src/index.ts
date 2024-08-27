@@ -15,6 +15,8 @@ export * from './schemas/product.schema';
 export * from './schemas/interest.schema';
 export * from './schemas/post.schema';
 export * from './schemas/tag.schema';
+export * from './schemas/like.schema';
+export * from './schemas/comment.schema';
 
 //InputTypes
 export * from './types/input/CreateUserInput';
