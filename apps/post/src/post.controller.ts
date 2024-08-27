@@ -125,4 +125,20 @@ export class PostController {
     this.sharedService.acknowledgeMessage(context);
     return await this.postService.createComment(createComment);
   }
+
+  @MessagePattern({
+    cmd: 'update_comment',
+  })
+  async updateComment(
+    @Ctx() context: RmqContext,
+    @Payload()
+    updateComment: {
+      userId: string;
+      commentId: string;
+      content: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.updateComment(updateComment);
+  }
 }

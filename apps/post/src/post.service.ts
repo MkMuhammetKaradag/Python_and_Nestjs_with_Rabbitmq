@@ -15,6 +15,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import path from 'path';
 import { StringifyOptions } from 'querystring';
 
 @Injectable()
@@ -72,7 +73,11 @@ export class PostService {
         })
         .populate({
           path: 'comments',
-          select: '_id content createdAt ',
+          select: '_id content createdAt user',
+          populate: {
+            path: 'user',
+            select: '_id email ',
+          },
           model: 'Comment',
         })
         .exec();
@@ -222,6 +227,27 @@ export class PostService {
       { new: true },
     );
 
-    return savedComment
+    return savedComment;
+  }
+
+  async updateComment(updateCommnetData: {
+    userId: string;
+    commentId: string;
+    content: string;
+  }) {
+    const comment = await this.postCommentModel.findOne({
+      _id: updateCommnetData.commentId,
+      user: updateCommnetData.userId,
+    });
+
+    if (!comment) {
+      throw new RpcException({
+        message: 'Comment Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    comment.content = updateCommnetData.content;
+    const updatedComment = await comment.save();
+    return updatedComment;
   }
 }

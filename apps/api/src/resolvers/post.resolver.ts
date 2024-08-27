@@ -12,6 +12,7 @@ import {
   RemoveLikeObject,
   SignUrlInput,
   SignUrlOutput,
+  UpdateCommentInput,
 } from '@app/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -172,6 +173,40 @@ export class PostResolver {
         this.postService.send(
           {
             cmd: 'create_comment',
+          },
+          {
+            userId: user._id,
+            ...input,
+          },
+        ),
+      );
+      return comment;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Mutation(() => Comment)
+  @UseGuards(AuthGuard)
+  async updateComment(
+    @Args('input') input: UpdateCommentInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to comment a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+
+    try {
+      const comment = await firstValueFrom<Comment>(
+        this.postService.send(
+          {
+            cmd: 'update_comment',
           },
           {
             userId: user._id,
