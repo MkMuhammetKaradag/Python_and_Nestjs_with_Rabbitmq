@@ -2,11 +2,12 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { PostService } from './post.service';
 import {
   Ctx,
+  EventPattern,
   MessagePattern,
   Payload,
   RmqContext,
 } from '@nestjs/microservices';
-import { SharedService } from '@app/shared';
+import { RegisterUserInput, SharedService } from '@app/shared';
 
 @Controller()
 export class PostController {
@@ -25,7 +26,7 @@ export class PostController {
     createPost: {
       userId: string;
       title: string;
-      medis: [
+      media: [
         {
           url: string;
           type: string;
@@ -35,5 +36,47 @@ export class PostController {
   ) {
     this.sharedService.acknowledgeMessage(context);
     return await this.postService.createPost(createPost);
+  }
+  @MessagePattern({
+    cmd: 'get_post',
+  })
+  async getPost(
+    @Ctx() context: RmqContext,
+    @Payload()
+    getPost: {
+      postId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.getPost(getPost.postId);
+  }
+
+  @EventPattern({
+    cmd: 'created_user',
+  })
+  async handleUserCreatedEvent(
+    @Ctx() context: RmqContext,
+    @Payload()
+    createUser: {
+      userId: string;
+      user: RegisterUserInput;
+    },
+  ) {
+    // User created olayı geldiğinde yapılacak işlemler
+    const {
+      userId,
+      user: { firstName, lastName, email, roles, password },
+    } = createUser;
+
+    // Post servisi içerisinde bu kullanıcıyla ilgili yapılacak işlemler
+    await this.postService.createUser({
+      id: userId,
+      firstName,
+      lastName,
+      email,
+      roles,
+      password,
+    });
+    this.sharedService.acknowledgeMessage(context);
   }
 }

@@ -59,12 +59,32 @@ export class PostResolver {
   ): Promise<SignUrlOutput> {
     const { signature, timestamp } =
       await this.cloudinaryService.generateSignature(input.publicId, 'posts');
-    console.log(signature, timestamp);
     return {
       signature,
       timestamp,
       cloudName: process.env.CLD_CLOUD_NAME,
       apiKey: process.env.CLD_API_KEY,
     };
+  }
+
+  @Query(() => Post)
+  async getPost(@Args('postId') postId: string): Promise<Post> {
+    try {
+      const post = await firstValueFrom<Post>(
+        this.postService.send(
+          {
+            cmd: 'get_post',
+          },
+          {
+            postId: postId,
+          },
+        ),
+      );
+      return post;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
   }
 }

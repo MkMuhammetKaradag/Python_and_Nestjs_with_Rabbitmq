@@ -46,7 +46,7 @@ enum MediaType {
 
 type Post {
   _id: ID!
-  userId: ID!
+  user: User!
   media: [Media!]!
   title: String!
   status: PostStatus!
@@ -82,6 +82,7 @@ type Query {
   getQuery: String!
   getMe: User!
   protectedQuery: String!
+  getPost(postId: String!): Post!
 }
 
 type Mutation {

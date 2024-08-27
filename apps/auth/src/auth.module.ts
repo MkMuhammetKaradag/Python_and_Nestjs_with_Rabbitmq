@@ -30,6 +30,7 @@ import { JwtModule } from '@nestjs/jwt';
     }),
     SharedModule,
     EmailModule,
+    SharedModule.registerRmq('POST_SERVICE', 'POST'),
     MongoDBModule.forRoot('AUTH', 'auth'), // connectionName: 'authConnection'
     MongoDBModule.forRoot('PRODUCT', 'product'), // connectionName: 'productConnection'
     MongooseModule.forFeature(

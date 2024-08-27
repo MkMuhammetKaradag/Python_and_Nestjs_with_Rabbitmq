@@ -22,7 +22,10 @@ import { MongooseModule } from '@nestjs/mongoose';
     MongoDBModule.forRoot('USER', 'user'), // connectionName: 'authConnection'
     MongoDBModule.forRoot('POST', 'post'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
-      [{ name: Post.name, schema: PostSchema }],
+      [
+        { name: Post.name, schema: PostSchema },
+        { name: User.name, schema: UserSchema },
+      ],
       'post', // Associate with userConnection
     ),
     MongooseModule.forFeature(

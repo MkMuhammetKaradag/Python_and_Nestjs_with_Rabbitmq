@@ -9,8 +9,13 @@ import {
   User,
   UserDocument,
 } from '@app/shared';
-import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -26,6 +31,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
 
     private readonly emailService: EmailService,
+
+    @Inject('POST_SERVICE')
+    private readonly postService: ClientProxy,
   ) {}
   getHello(): string {
     return 'Hello World! auth users';
@@ -114,7 +122,15 @@ export class AuthService {
     }
 
     const user = new this.userModel(activationData.user);
-
+    this.postService.emit(
+      {
+        cmd: 'created_user',
+      },
+      {
+        userId: user._id,
+        user: activationData.user,
+      },
+    );
     return user.save();
   }
   async doesPasswordMatch(
@@ -230,7 +246,7 @@ export class AuthService {
 
     return user;
   }
-  
+
   async getUserId(_id: string) {
     return await this.userModel.findOne({
       _id,

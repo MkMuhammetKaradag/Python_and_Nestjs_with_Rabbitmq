@@ -1,7 +1,14 @@
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import {
+  createUnionType,
+  Field,
+  ID,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Tag } from './tag.schema';
+import { User } from './user.schema';
 
 export type PostDocument = Post & Document;
 
@@ -49,8 +56,8 @@ export class Post {
   _id: string;
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
-  @Field(() => ID)
-  userId: string; // Kullanıcının ID'sini referans alır
+  @Field(() => User)
+  user: Types.ObjectId; // Kullanıcının ID'sini referans alır
 
   @Prop({ type: [Media], required: true })
   @Field(() => [Media]) // Birden fazla medya içeriği olabilir
@@ -69,7 +76,6 @@ export class Post {
 
   @Field()
   updatedAt: string;
-
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Tag' }] })
   @Field(() => [Tag], { nullable: true }) // Paylaşımın etiketleri
