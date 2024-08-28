@@ -1,4 +1,4 @@
-import { Field, ID, registerEnumType } from '@nestjs/graphql';
+import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { User } from './user.schema';
@@ -15,6 +15,7 @@ registerEnumType(FollowRequestStatus, {
   description: 'Status of the Request',
 });
 @Schema({ timestamps: true })
+@ObjectType()
 export class FollowRequest {
   @Field(() => ID)
   _id: string;

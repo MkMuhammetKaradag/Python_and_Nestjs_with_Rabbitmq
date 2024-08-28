@@ -41,4 +41,36 @@ export class UserController {
       followUser.targetUserId,
     );
   }
+
+  @MessagePattern({
+    cmd: 'accept_follow_request',
+  })
+  async acceptFollowRequest(
+    @Ctx() context: RmqContext,
+    @Payload()
+    acceptFollowRequest: {
+      requestId: string;
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.acceptFollowRequest(
+      acceptFollowRequest.currentUserId,
+      acceptFollowRequest.requestId,
+    );
+  }
+
+  @MessagePattern({
+    cmd: 'get_follow_request',
+  })
+  async getFollowRequests(
+    @Ctx() context: RmqContext,
+    @Payload()
+    getFollowRequests: {
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.getFollowRequests(getFollowRequests.currentUserId);
+  }
 }

@@ -73,4 +73,36 @@ export class UserService {
       return { message: 'User followed successfully' };
     }
   }
+
+  async acceptFollowRequest(currentUserId: string, requestId: string) {
+    const request = await this.followRequestModel.findById(requestId);
+
+    if (
+      !request ||
+      request.to.toString() !== currentUserId ||
+      request.status !== 'pending'
+    ) {
+      throw new NotFoundException('Invalid follow request');
+    }
+
+    request.status = 'accepted';
+    await request.save();
+
+    const currentUser = await this.userModel.findById(currentUserId);
+    const follower = await this.userModel.findById(request.from);
+
+    currentUser.followers.push(request.from);
+    await currentUser.save();
+    const currenUserObjectId = new Types.ObjectId(currentUserId);
+    follower.following.push(currenUserObjectId);
+    await follower.save();
+
+    return { message: 'Follow request accepted' };
+  }
+
+  async getFollowRequests(currentUserId: string) {
+    return this.followRequestModel
+      .find({ to: currentUserId, status: 'pending' })
+      .populate('from', 'firstName lastName profilePhoto');
+  }
 }

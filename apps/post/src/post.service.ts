@@ -86,7 +86,7 @@ export class PostService {
         })
         .exec();
 
-      const postOwner = post.user;
+      const postOwner = await this.userModel.findById(post.user._id);
       const canViewPostOwner = this.canViewProfile(
         postOwner,
         currentUserId,

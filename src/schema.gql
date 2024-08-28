@@ -89,6 +89,20 @@ enum PostStatus {
   DRAFT
 }
 
+type FollowRequest {
+  _id: ID!
+  from: User!
+  to: User!
+  status: FollowRequestStatus!
+}
+
+"""Status of the Request"""
+enum FollowRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 type RegisterUserObject {
   activationToken: String!
 }
@@ -115,6 +129,7 @@ type Query {
   getQuery: String!
   getMe: User!
   protectedQuery: String!
+  getFollowRequests: [FollowRequest!]!
   getPost(postId: String!): Post!
 }
 
@@ -124,6 +139,7 @@ type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
   followUser(targetUserId: String!): String!
+  acceptFollowRequest(requestId: String!): String!
   createPost(input: CreatePostInput!): Post!
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
   addLikePost(postId: String!): Like!
