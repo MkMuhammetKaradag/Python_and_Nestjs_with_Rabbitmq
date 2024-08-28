@@ -123,6 +123,7 @@ type Mutation {
   loginUser(input: LoginUserInput!): LoginUserObject!
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
+  followUser(targetUserId: String!): String!
   createPost(input: CreatePostInput!): Post!
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
   addLikePost(postId: String!): Like!

@@ -3,6 +3,8 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ConfigModule } from '@nestjs/config';
 import {
+  FollowRequest,
+  FollowRequestSchema,
   MongoDBModule,
   SharedModule,
   SharedService,
@@ -17,9 +19,12 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true,
     }),
     SharedModule,
-    MongoDBModule.forRoot('USER', 'user'),//connectionName: 'userConnection'
+    MongoDBModule.forRoot('USER', 'user'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
-      [{ name: User.name, schema: UserSchema }],
+      [
+        { name: User.name, schema: UserSchema },
+        { name: FollowRequest.name, schema: FollowRequestSchema },
+      ],
       'user', // Associate with userConnection
     ),
   ],
