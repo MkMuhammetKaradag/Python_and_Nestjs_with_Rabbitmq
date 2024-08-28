@@ -1,6 +1,7 @@
 import {
   FollowRequest,
   FollowRequestDocument,
+  FollowRequestStatus,
   User,
   UserDocument,
 } from '@app/shared';
@@ -82,10 +83,13 @@ export class UserService {
       request.to.toString() !== currentUserId ||
       request.status !== 'pending'
     ) {
-      throw new NotFoundException('Invalid follow request');
+      throw new RpcException({
+        message: 'Invalid follow request',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
 
-    request.status = 'accepted';
+    request.status = FollowRequestStatus.ACCEPTED;
     await request.save();
 
     const currentUser = await this.userModel.findById(currentUserId);
@@ -98,6 +102,26 @@ export class UserService {
     await follower.save();
 
     return { message: 'Follow request accepted' };
+  }
+
+  async rejectFollowRequest(currentUserId: string, requestId: string) {
+    const request = await this.followRequestModel.findById(requestId);
+
+    if (
+      !request ||
+      request.to.toString() !== currentUserId ||
+      request.status !== FollowRequestStatus.PENDING
+    ) {
+      throw new RpcException({
+        message: 'Invalid follow request',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    request.status = FollowRequestStatus.REJECTED;
+    await request.save();
+
+    return { message: 'Follow request rejected' };
   }
 
   async getFollowRequests(currentUserId: string) {

@@ -59,7 +59,23 @@ export class UserController {
       acceptFollowRequest.requestId,
     );
   }
-
+  @MessagePattern({
+    cmd: 'reject_follow_request',
+  })
+  async rejectFollowRequest(
+    @Ctx() context: RmqContext,
+    @Payload()
+    rejectFollowRequest: {
+      requestId: string;
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.rejectFollowRequest(
+      rejectFollowRequest.currentUserId,
+      rejectFollowRequest.requestId,
+    );
+  }
   @MessagePattern({
     cmd: 'get_follow_request',
   })

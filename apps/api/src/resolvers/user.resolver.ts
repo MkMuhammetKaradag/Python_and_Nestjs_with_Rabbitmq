@@ -89,6 +89,41 @@ export class UserResolver {
       });
     }
   }
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
+  async rejectFollowRequest(
+    @Args('requestId') requestId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<{
+        message: string;
+      }>(
+        this.userService.send(
+          {
+            cmd: 'reject_follow_request',
+          },
+          {
+            currentUserId: user._id,
+            requestId: requestId,
+          },
+        ),
+      );
+
+      return data.message;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
 
   @Query(() => [FollowRequest])
   @UseGuards(AuthGuard)
