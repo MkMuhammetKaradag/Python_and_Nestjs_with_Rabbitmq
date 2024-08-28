@@ -77,7 +77,16 @@ export class PostResolver {
   }
 
   @Query(() => Post)
-  async getPost(@Args('postId') postId: string): Promise<Post> {
+  @UseGuards(AuthGuard)
+  async getPost(
+    @Args('postId') postId: string,
+    @CurrentUser() user: any,
+  ): Promise<Post> {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
     try {
       const post = await firstValueFrom<Post>(
         this.postService.send(
@@ -86,6 +95,7 @@ export class PostResolver {
           },
           {
             postId: postId,
+            currentUserId: user._id,
           },
         ),
       );
@@ -235,8 +245,7 @@ export class PostResolver {
       if (!req?.user) {
         throw new BadRequestException();
       }
-      const user = req.user; // Kullanıcıyı context üzerinden alın
-      // console.log(payload);
+
       return true;
     },
   })

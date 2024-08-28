@@ -45,10 +45,14 @@ export class PostController {
     @Payload()
     getPost: {
       postId: string;
+      currentUserId: string;
     },
   ) {
     this.sharedService.acknowledgeMessage(context);
-    return await this.postService.getPost(getPost.postId);
+    return await this.postService.getPost(
+      getPost.postId,
+      getPost.currentUserId,
+    );
   }
 
   @EventPattern({

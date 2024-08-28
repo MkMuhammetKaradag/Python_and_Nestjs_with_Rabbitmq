@@ -19,6 +19,9 @@ type User {
   createdAt: String!
   updatedAt: String!
   interests: [Interest!]
+  following: [User!]
+  followers: [User!]
+  isPrivate: Boolean!
 }
 
 """User roles"""

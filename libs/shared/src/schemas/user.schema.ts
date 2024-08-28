@@ -74,10 +74,22 @@ export class User {
   @Field() // GraphQL alanı olarak işaretleme
   updatedAt: string;
 
-
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Interest' }] })
   @Field(() => [Interest], { nullable: true }) // Kullanıcının ilgi alanları
   interests: Types.ObjectId[];
+
+  // Yeni eklenen alanlar
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  @Field(() => [User], { nullable: true })
+  following: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  @Field(() => [User], { nullable: true })
+  followers: Types.ObjectId[];
+
+  @Prop({ default: false })
+  @Field(() => Boolean)
+  isPrivate: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

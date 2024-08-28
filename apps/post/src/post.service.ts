@@ -62,13 +62,13 @@ export class PostService {
     return await post.save();
   }
 
-  async getPost(postId: string) {
+  async getPost(postId: string, currentUserId: string) {
     try {
       const post = await this.postModel
         .findById(postId)
         .populate({
           path: 'user',
-          select: '_id profilPhoto firstName lastName',
+          select: '_id profilPhoto firstName lastName isPrivate followers',
         })
         .populate({
           path: 'likes',
@@ -85,7 +85,20 @@ export class PostService {
           model: 'Comment',
         })
         .exec();
-      console.log(post);
+
+      const postOwner = post.user;
+      const canViewPostOwner = this.canViewProfile(
+        postOwner,
+        currentUserId,
+        postOwner._id.toString(),
+      );
+      if (!post || !canViewPostOwner) {
+        throw new RpcException({
+          message: 'Post Not Found',
+          statusCode: HttpStatus.NOT_FOUND,
+        });
+      }
+
       return post;
     } catch (error) {
       console.log(error);
@@ -95,7 +108,28 @@ export class PostService {
       });
     }
   }
+  private canViewProfile(
+    user,
+    currentUserId: string,
+    postOwnerId: string,
+  ): boolean {
+    // Eğer profil mevcut kullanıcıya aitse veya mevcut kullanıcı post sahibiyse, her zaman görüntüleyebilir
+    if (
+      user._id.toString() === currentUserId ||
+      currentUserId === postOwnerId
+    ) {
+      return true;
+    }
 
+    if (!user.isPrivate) {
+      return true; // Profil gizli değilse herkes görebilir
+    }
+
+    // Profil gizliyse, sadece takipçiler görebilir
+    return user.followers.some(
+      (follower) => follower.toString() === currentUserId,
+    );
+  }
   async createUser({
     id,
     firstName,
