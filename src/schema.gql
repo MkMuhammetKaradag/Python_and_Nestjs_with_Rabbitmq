@@ -178,3 +178,7 @@ input UpdateCommentInput {
   content: String
   isDeleted: Boolean
 }
+
+type Subscription {
+  createCommentPost(postId: String!): Comment!
+}

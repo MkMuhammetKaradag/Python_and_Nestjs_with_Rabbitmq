@@ -7,17 +7,19 @@ import {
   Post,
   PostDocument,
   Product,
+  PUB_SUB,
   User,
   UserDocument,
   UserRole,
 } from '@app/shared';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Model } from 'mongoose';
 import path from 'path';
 import { StringifyOptions } from 'querystring';
-
+const CREATE_COMMENT_POST = 'createCommentPost';
 @Injectable()
 export class PostService {
   constructor(
@@ -32,6 +34,8 @@ export class PostService {
     private postLikeModel: Model<LikeDocument>,
     @InjectModel(Comment.name, 'post')
     private postCommentModel: Model<CommentDocument>,
+
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
   async createPost(createPost: {
     userId: string;
@@ -226,6 +230,13 @@ export class PostService {
       { $addToSet: { comments: savedComment._id } },
       { new: true },
     );
+
+    this.pubSub.publish(CREATE_COMMENT_POST, {
+      createCommentPost: {
+        _id: savedComment._id,
+        content: savedComment.content,
+      },
+    });
 
     return savedComment;
   }

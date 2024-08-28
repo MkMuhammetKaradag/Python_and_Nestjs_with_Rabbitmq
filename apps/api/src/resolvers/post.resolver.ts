@@ -1,5 +1,5 @@
-import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
-import { Inject, UseGuards } from '@nestjs/common';
+import { Resolver, Query, Args, Mutation, Subscription } from '@nestjs/graphql';
+import { BadRequestException, Inject, UseGuards } from '@nestjs/common';
 import {
   AuthGuard,
   CloudinaryService,
@@ -9,6 +9,7 @@ import {
   CurrentUser,
   Like,
   Post,
+  PUB_SUB,
   RemoveLikeObject,
   SignUrlInput,
   SignUrlOutput,
@@ -17,7 +18,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
-
+import { RedisPubSub } from 'graphql-redis-subscriptions';
+const CREATE_COMMENT_POST = 'createCommentPost';
 @Resolver('Post')
 export class PostResolver {
   constructor(
@@ -25,6 +27,8 @@ export class PostResolver {
     private readonly postService: ClientProxy,
 
     private readonly cloudinaryService: CloudinaryService,
+
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
   @Mutation(() => Post)
   @UseGuards(AuthGuard)
@@ -222,5 +226,21 @@ export class PostResolver {
         },
       });
     }
+  }
+
+  @UseGuards(AuthGuard)
+  @Subscription(() => Comment, {
+    filter: async function (payload, variables, context) {
+      const { req, res } = context;
+      if (!req?.user) {
+        throw new BadRequestException();
+      }
+      const user = req.user; // Kullanıcıyı context üzerinden alın
+      // console.log(payload);
+      return true;
+    },
+  })
+  createCommentPost(@Args('postId') postId: string) {
+    return this.pubSub.asyncIterator(CREATE_COMMENT_POST);
   }
 }

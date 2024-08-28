@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ApiController } from './api.controller';
 import { ApiService } from './api.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CloudinaryModule, SharedModule } from '@app/shared';
+import { CloudinaryModule, PubSubModule, SharedModule } from '@app/shared';
 import { AuthController } from './contollers/auth.controller';
 import { MathController } from './contollers/math.controller';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -12,12 +12,14 @@ import * as cookieParser from 'cookie-parser';
 import { AuthResolver } from './resolvers/auth.resolver';
 import { UserResolver } from './resolvers/user.resolver';
 import { PostResolver } from './resolvers/post.resolver';
+import { parseCookies } from './utils';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     CloudinaryModule,
+    PubSubModule,
     SharedModule.registerRmq('AUTH_SERVICE', 'AUTH'),
     SharedModule.registerRmq('USER_SERVICE', 'USER'),
     SharedModule.registerRmq('POST_SERVICE', 'POST'),
@@ -42,17 +44,17 @@ import { PostResolver } from './resolvers/post.resolver';
         subscriptions: {
           'subscriptions-transport-ws': {
             onConnect: (connectionParams, webSocket, context) => {
-              const cookies = connectionParams.cookies
-                ? cookieParser.JSONCookies(connectionParams.cookies)
-                : {};
-              // console.log('sds', cookies);
-              if (connectionParams.Authorization) {
-                console.log(connectionParams.Authorization);
+              // console.log(webSocket);
+              // const cookies = cookie.parse(webSocket.upgradeReq.headers.cookie || '');
+              // const cookies = cookieParser.JSONCookies(
+              //   webSocket.upgradeReq.headers.cookie || '',
+              // );
+              const cookieString = webSocket.upgradeReq.headers.cookie || '';
+              const cookies = parseCookies(cookieString);
+
+              if (Object.keys(cookies).length > 0) {
                 return {
                   req: {
-                    headers: {
-                      authorization: connectionParams.Authorization,
-                    },
                     cookies: cookies,
                   },
                 };

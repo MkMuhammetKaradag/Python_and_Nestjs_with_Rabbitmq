@@ -3,6 +3,7 @@ export * from './modules/shared.module';
 export * from './modules/mongodb.module';
 export * from './modules/email.module';
 export * from './modules/cloudinary.module';
+export * from './modules/pubSub.module';
 
 //services
 export * from './services/shared.service';

@@ -10,6 +10,7 @@ import {
   MongoDBModule,
   Post,
   PostSchema,
+  PubSubModule,
   SharedModule,
   SharedService,
   User,
@@ -23,6 +24,7 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true,
     }),
     SharedModule,
+    PubSubModule,
     MongoDBModule.forRoot('USER', 'user'), // connectionName: 'authConnection'
     MongoDBModule.forRoot('POST', 'post'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
