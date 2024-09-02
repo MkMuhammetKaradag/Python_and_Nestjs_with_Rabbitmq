@@ -24,6 +24,7 @@ import { parseCookies } from './utils';
     SharedModule.registerRmq('USER_SERVICE', 'USER'),
     SharedModule.registerRmq('POST_SERVICE', 'POST'),
     SharedModule.registerRmq('MATH_SERVICE', 'MATH'),
+    SharedModule.registerRmq('IMAGE_SERVICE', 'IMAGE'),
     SharedModule.registerRmq('PRODUCT_SERVICE', 'PRODUCT'),
     GraphQLModule.forRootAsync({
       imports: [ConfigModule],

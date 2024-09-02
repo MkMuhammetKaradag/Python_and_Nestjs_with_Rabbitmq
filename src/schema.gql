@@ -147,6 +147,7 @@ type Mutation {
   removeLikePost(postId: String!): RemoveLikeObject!
   createComment(input: CreateCommentInput!): Comment!
   updateComment(input: UpdateCommentInput!): Comment!
+  checkHumanInMedia(input: CreatePostInput!): String!
 }
 
 input CreateUserInput {

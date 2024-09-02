@@ -5,6 +5,7 @@ import {
   CloudinaryService,
   Comment,
   CreateCommentInput,
+  CreateMediaInput,
   CreatePostInput,
   CurrentUser,
   Like,
@@ -16,15 +17,19 @@ import {
   UpdateCommentInput,
 } from '@app/shared';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
+
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Resolver('Post')
 export class PostResolver {
   constructor(
     @Inject('POST_SERVICE')
     private readonly postService: ClientProxy,
+
+    @Inject('IMAGE_SERVICE')
+    private readonly imageService: ClientProxy,
 
     private readonly cloudinaryService: CloudinaryService,
 
@@ -251,5 +256,33 @@ export class PostResolver {
   })
   createCommentPost(@Args('postId') postId: string) {
     return this.pubSub.asyncIterator(CREATE_COMMENT_POST);
+  }
+
+  @Mutation(() => String)
+  async checkHumanInMedia(@Args('input') input: CreatePostInput) {
+    try {
+      const data = await lastValueFrom(
+        this.imageService.send<{
+          results: {
+            url: string;
+            human_detected: string;
+          }[];
+        }>(
+          { cmd: 'check_human_in_image' },
+          {
+            media: input.media,
+          },
+        ),
+      );
+
+      // console.log(data.results);
+      return 'asasa';
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
   }
 }

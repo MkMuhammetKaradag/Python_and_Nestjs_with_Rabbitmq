@@ -20,4 +20,16 @@ export class CloudinaryService {
     );
     return { signature, timestamp };
   }
+
+  async deleteFilesFromCloudinary(publicIds: string[]) {
+    try {
+      const deletionPromises = publicIds.map((publicId) =>
+        cloudinary.uploader.destroy(publicId),
+      );
+      await Promise.all(deletionPromises);
+      console.log('Files successfully deleted from Cloudinary');
+    } catch (error) {
+      console.error('Failed to delete files from Cloudinary:', error);
+    }
+  }
 }
