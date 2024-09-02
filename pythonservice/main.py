@@ -5,6 +5,7 @@ import threading
 import cv2
 import numpy as np
 import requests
+from urllib.parse import urlparse
 app = Flask(__name__)
 
 # RabbitMQ bağlantısı
@@ -76,9 +77,37 @@ def callback_image(ch, method, properties, body):
         for item in data['media']:
             if 'url' in item and 'type' in item and item['type'] == 'image':
                 image_url = item['url']
+                # URL geçerliliğini kontrol et
+                parsed_url = urlparse(image_url)
+                if not parsed_url.scheme or not parsed_url.netloc:
+                    results.append({
+                        "url": image_url,
+                        "publicId": item.get('publicId', 'unknown'),
+                        "human_detected": "invalid_url"
+                    })
+                    continue
+
+                try:
+                    response = requests.head(image_url)
+                    if response.status_code != 200:
+                        results.append({
+                            "url": image_url,
+                            "publicId": item.get('publicId', 'unknown'),
+                            "human_detected": "url_not_found"
+                        })
+                        continue
+                except requests.RequestException:
+                    results.append({
+                        "url": image_url,
+                        "publicId": item.get('publicId', 'unknown'),
+                        "human_detected": "url_error"
+                    })
+                    continue
+
                 human_detected = detect_human_in_image(image_url)
                 result = {
                     "url": image_url,
+                    "publicId": item.get('publicId', 'unknown'),
                     "human_detected": "human_detected" if human_detected else "no_human_detected"
                 }
                 results.append(result)
@@ -119,13 +148,37 @@ def check_human():
         data = request.json
         if 'media' not in data:
             return jsonify({"error": "Missing 'media' in the request"}), 400
-        
+
         media = data['media']
         results = []
 
         for item in media:
             if 'url' in item and 'type' in item and item['type'] == 'image':
                 image_url = item['url']
+                # URL geçerliliğini kontrol et
+                parsed_url = urlparse(image_url)
+                if not parsed_url.scheme or not parsed_url.netloc:
+                    results.append({
+                        "url": image_url,
+                        "human_detected": "invalid_url"
+                    })
+                    continue
+
+                try:
+                    response = requests.head(image_url)
+                    if response.status_code != 200:
+                        results.append({
+                            "url": image_url,
+                            "human_detected": "url_not_found"
+                        })
+                        continue
+                except requests.RequestException:
+                    results.append({
+                        "url": image_url,
+                        "human_detected": "url_error"
+                    })
+                    continue
+
                 human_detected = detect_human_in_image(image_url)
                 result = {
                     "url": image_url,
@@ -136,7 +189,6 @@ def check_human():
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 # RabbitMQ tüketiciyi ayrı bir thread'de başlat
 def start_consuming():
     channel.start_consuming()

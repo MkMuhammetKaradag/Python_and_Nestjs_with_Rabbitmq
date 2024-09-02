@@ -183,6 +183,7 @@ input CreatePostInput {
 
 input CreateMediaInput {
   url: String!
+  publicId: String!
   type: MediaType!
 }
 

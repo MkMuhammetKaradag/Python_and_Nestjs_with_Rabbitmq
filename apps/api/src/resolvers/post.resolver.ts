@@ -46,7 +46,31 @@ export class PostResolver {
         extensions: { code: 'USER_NOT_FOUND' },
       });
     }
+
     try {
+      const data = await lastValueFrom(
+        this.imageService.send<{
+          results: {
+            url: string;
+            publicId: string;
+            human_detected: string;
+          }[];
+        }>(
+          { cmd: 'check_human_in_image' },
+          {
+            media: input.media,
+          },
+        ),
+      );
+      const filteredPublicIds = data.results
+        .filter((result) => result.human_detected !== 'no_human_detected')
+        .map((result) => result.publicId);
+      if (filteredPublicIds.length == input.media.length) {
+        throw new GraphQLError('No human detected in image');
+      }
+      const media = input.media.filter(
+        (res) => !filteredPublicIds.includes(res.publicId),
+      );
       const post = await firstValueFrom<Post>(
         this.postService.send(
           {
@@ -54,7 +78,8 @@ export class PostResolver {
           },
           {
             userId: user._id,
-            ...input,
+            title: input.title,
+            media: media,
           },
         ),
       );
@@ -265,6 +290,7 @@ export class PostResolver {
         this.imageService.send<{
           results: {
             url: string;
+            publicId: string;
             human_detected: string;
           }[];
         }>(
@@ -274,8 +300,10 @@ export class PostResolver {
           },
         ),
       );
-
-      // console.log(data.results);
+      const filteredPublicIds = data.results
+        .filter((result) => result.human_detected !== 'no_human_detected')
+        .map((result) => result.publicId);
+      console.log(filteredPublicIds);
       return 'asasa';
     } catch (error) {
       throw new GraphQLError(error.message, {
