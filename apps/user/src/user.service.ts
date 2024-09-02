@@ -34,6 +34,14 @@ export class UserService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
+    const targetUserObjectId = new Types.ObjectId(targetUserId);
+    const existingRequest = currentUser.following.includes(targetUserObjectId);
+    if (existingRequest) {
+      throw new RpcException({
+        message: 'You are already following this user',
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
 
     if (targetUser.isPrivate) {
       // Kullanıcı zaten takip ediliyorsa veya bekleyen bir istek varsa hata fırlat
@@ -61,15 +69,14 @@ export class UserService {
       return { message: 'Follow request sent' };
     } else {
       // Profil gizli değilse doğrudan takip et
-      const targetUserObjectId = new Types.ObjectId(targetUserId);
+      // const targetUserObjectId = new Types.ObjectId(targetUserId);
       const currentUserObjectId = new Types.ObjectId(currentUserId);
-      if (!currentUser.following.includes(targetUserObjectId)) {
-        currentUser.following.push(targetUserObjectId);
-        await currentUser.save();
 
-        targetUser.followers.push(currentUserObjectId);
-        await targetUser.save();
-      }
+      currentUser.following.push(targetUserObjectId);
+      await currentUser.save();
+
+      targetUser.followers.push(currentUserObjectId);
+      await targetUser.save();
 
       return { message: 'User followed successfully' };
     }
