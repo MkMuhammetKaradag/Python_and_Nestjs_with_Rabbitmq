@@ -145,4 +145,24 @@ export class PostController {
     this.sharedService.acknowledgeMessage(context);
     return await this.postService.updateComment(updateComment);
   }
+
+  @MessagePattern({
+    cmd: 'get_posts_from_followed_users',
+  })
+  async getPostsFromFollowedUsers(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+      page: number;
+      pageSize: number;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.getPostsFromFollowedUsers(
+      payload.userId,
+      payload.page,
+      payload.pageSize,
+    );
+  }
 }

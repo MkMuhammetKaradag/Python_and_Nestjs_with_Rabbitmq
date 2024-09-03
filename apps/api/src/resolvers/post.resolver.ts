@@ -20,6 +20,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { GetPostsFromFollowedUsers } from '@app/shared/types/input/GetPostsFromFollowedUsersInput';
 
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Resolver('Post')
@@ -68,7 +69,7 @@ export class PostResolver {
       if (filteredPublicIds.length == input.media.length) {
         throw new GraphQLError('No human detected in image');
       }
-      await this.cloudinaryService.deleteFilesFromCloudinary(filteredPublicIds)
+      await this.cloudinaryService.deleteFilesFromCloudinary(filteredPublicIds);
       const media = input.media.filter(
         (res) => !filteredPublicIds.includes(res.publicId),
       );
@@ -86,7 +87,6 @@ export class PostResolver {
       );
       return post;
     } catch (error) {
-      
       throw new GraphQLError(error.message, {
         extensions: { ...error },
       });
@@ -307,6 +307,41 @@ export class PostResolver {
         .map((result) => result.publicId);
       console.log(filteredPublicIds);
       return 'asasa';
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => [Post])
+  @UseGuards(AuthGuard)
+  async getPostsFromFollowedUsers(
+    @Args('input') input: GetPostsFromFollowedUsers,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to comment a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+    try {
+      const posts = await firstValueFrom<Post[]>(
+        this.postService.send(
+          {
+            cmd: 'get_posts_from_followed_users',
+          },
+          {
+            userId: user._id,
+            page: input.page,
+            pageSize: input.pageSize,
+          },
+        ),
+      );
+
+      return posts;
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: {

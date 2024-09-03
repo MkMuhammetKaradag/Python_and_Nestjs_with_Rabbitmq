@@ -131,6 +131,12 @@ type Query {
   protectedQuery: String!
   getFollowRequests: [FollowRequest!]!
   getPost(postId: String!): Post!
+  getPostsFromFollowedUsers(input: GetPostsFromFollowedUsers!): [Post!]!
+}
+
+input GetPostsFromFollowedUsers {
+  page: Float!
+  pageSize: Float!
 }
 
 type Mutation {

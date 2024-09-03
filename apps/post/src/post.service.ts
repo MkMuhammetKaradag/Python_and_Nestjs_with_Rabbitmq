@@ -295,4 +295,39 @@ export class PostService {
     const updatedComment = await comment.save();
     return updatedComment;
   }
+
+  async getPostsFromFollowedUsers(
+    userId: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ) {
+    // Kullanıcının takip ettiği kullanıcıları alın
+    const user = await this.postUserModel
+      .findById(userId)
+      .populate('following')
+      .exec();
+
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    // const followingIds = user.following.map((followedUser) => followedUser._id);
+
+    // Sayfalama parametrelerini ayarlayın
+    const skip = (page - 1) * pageSize;
+    const limit = pageSize;
+
+    // Takip ettiği kullanıcıların postlarını alın,
+    const posts = await this.postModel
+      .find({ user: { $in: user.following } })
+      .skip(skip)
+      .limit(limit)
+      .populate('user')
+      .exec();
+
+    return posts;
+  }
 }
