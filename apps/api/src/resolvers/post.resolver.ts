@@ -68,6 +68,7 @@ export class PostResolver {
       if (filteredPublicIds.length == input.media.length) {
         throw new GraphQLError('No human detected in image');
       }
+      await this.cloudinaryService.deleteFilesFromCloudinary(filteredPublicIds)
       const media = input.media.filter(
         (res) => !filteredPublicIds.includes(res.publicId),
       );
@@ -85,6 +86,7 @@ export class PostResolver {
       );
       return post;
     } catch (error) {
+      
       throw new GraphQLError(error.message, {
         extensions: { ...error },
       });
