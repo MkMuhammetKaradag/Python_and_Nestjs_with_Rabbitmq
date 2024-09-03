@@ -6,6 +6,7 @@ import {
   LikeDocument,
   Post,
   PostDocument,
+  PostStatus,
   Product,
   PUB_SUB,
   User,
@@ -16,9 +17,10 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import path from 'path';
 import { StringifyOptions } from 'querystring';
+import { PipelineStage } from 'mongoose';
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Injectable()
 export class PostService {
@@ -55,7 +57,7 @@ export class PostService {
       });
     }
     const post = new this.postModel({
-      user: createPost.userId,
+      user: new Types.ObjectId(createPost.userId),
       title: createPost.title,
       media: createPost.media,
     });
@@ -328,6 +330,174 @@ export class PostService {
       .populate('user')
       .exec();
 
+    return posts;
+  }
+
+  async discoverPosts(
+    userId: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ): Promise<Post[]> {
+    const user = await this.postUserModel
+      .findById(userId)
+      .populate('interests');
+
+    const skip = (page - 1) * pageSize;
+    const limit = pageSize;
+    console.log('User interests:', user.interests);
+    console.log('User following:', user.following);
+
+    let pipeline: PipelineStage[] = [
+      {
+        $match: {
+          status: PostStatus.DRAFT,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users', // Emin olun ki bu, User modelinizin koleksiyon adıyla eşleşiyor
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      {
+        $unwind: {
+          path: '$userInfo',
+          preserveNullAndEmptyArrays: true, // Bu, eşleşme olmasa bile belgeyi korur
+        },
+      },
+      {
+        $match: {
+          $or: [{ userInfo: { $exists: true } }, { user: { $exists: true } }],
+        },
+      },
+    ];
+
+    let posts = await this.postModel.aggregate(pipeline);
+    // console.log('Number of posts after user lookup:', posts);
+
+    // if (posts.length > 0) {
+    //   console.log('Sample post:', JSON.stringify(posts[0], null, 2));
+    // }
+
+    if (posts.length === 0) {
+      return [];
+    }
+
+    // Gizlilik ve takip filtrelerini ekleyelim
+    pipeline.push({
+      $match: {
+        $or: [
+          { tags: { $in: user.interests } },
+          {
+            'userInfo._id': {
+              $in: user.following.map((id) => new Types.ObjectId(id)),
+            },
+          },
+          { user: { $in: user.following.map((id) => new Types.ObjectId(id)) } },
+        ],
+        $and: [
+          {
+            $or: [
+              { 'userInfo.isPrivate': { $ne: true } },
+              { 'userInfo._id': new Types.ObjectId(user._id) },
+              {
+                'userInfo._id': {
+                  $in: user.following.map((id) => new Types.ObjectId(id)),
+                },
+              },
+              { user: new Types.ObjectId(user._id) },
+              {
+                user: {
+                  $in: user.following.map((id) => new Types.ObjectId(id)),
+                },
+              },
+            ],
+          },
+        ],
+      },
+    } as PipelineStage);
+
+    posts = await this.postModel.aggregate(pipeline);
+    console.log(
+      'Number of posts after privacy and following filters:',
+      posts.length,
+    );
+
+    if (posts.length === 0) {
+      return [];
+    }
+
+    // Skor hesaplama ve sıralama kısmını ekleyin (önceki koddan)
+    pipeline.push(
+      {
+        $addFields: {
+          likeCount: { $size: { $ifNull: ['$likes', []] } },
+          commentCount: { $size: { $ifNull: ['$comments', []] } },
+          firstMedia: { $arrayElemAt: ['$media', 0] },
+          matchingTags: {
+            $size: {
+              $setIntersection: ['$tags', user.interests],
+            },
+          },
+          isFollowing: {
+            $cond: {
+              if: {
+                $in: [
+                  '$userInfo._id',
+                  user.following.map((id) => new Types.ObjectId(id)),
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      } as PipelineStage,
+      {
+        $addFields: {
+          score: {
+            $add: [
+              // { $size: { $ifNull: ['$likes', []] } },
+              // { $multiply: [{ $size: { $ifNull: ['$comments', []] } }, 2] },
+              '$likeCount',
+              { $multiply: ['$commentCount', 2] },
+              { $multiply: ['$matchingTags', 10] },
+              { $multiply: ['$isFollowing', 20] },
+              {
+                $divide: [
+                  {
+                    $subtract: [
+                      new Date(),
+                      { $ifNull: ['$createdAt', new Date()] },
+                    ],
+                  },
+                  1000 * 60 * 60 * 24,
+                ],
+              },
+            ],
+          },
+        },
+      } as PipelineStage,
+      {
+        $sort: { score: -1 },
+      } as PipelineStage,
+      {
+        $limit: limit,
+      } as PipelineStage,
+      {
+        $project: {
+          _id: 1,
+          likeCount: 1,
+          commentCount: 1,
+          firstMedia: 1,
+          score:1
+        },
+      } as PipelineStage,
+    );
+
+    posts = await this.postModel.aggregate(pipeline);
     return posts;
   }
 }

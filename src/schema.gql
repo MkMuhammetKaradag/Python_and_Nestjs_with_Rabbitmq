@@ -2,11 +2,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Interest {
-  _id: ID!
-  name: String!
-}
-
 type User {
   _id: ID!
   firstName: String!
@@ -18,7 +13,7 @@ type User {
   deletedAt: String
   createdAt: String!
   updatedAt: String!
-  interests: [Interest!]
+  interests: [String!]!
   following: [User!]
   followers: [User!]
   isPrivate: Boolean!
@@ -28,11 +23,6 @@ type User {
 enum UserRole {
   ADMIN
   USER
-}
-
-type Tag {
-  _id: ID!
-  name: String!
 }
 
 type Media {
@@ -78,9 +68,10 @@ type Post {
   status: PostStatus!
   createdAt: String!
   updatedAt: String!
-  tags: [Tag!]
+  tags: [String!]!
   likes: [Like!]
   comments: [Comment!]
+  score: Float!
 }
 
 """Status of the post"""
@@ -125,6 +116,14 @@ type RemoveLikeObject {
   message: String!
 }
 
+type DiscoverPostsObject {
+  _id: ID!
+  likeCount: Float!
+  commentCount: Float!
+  score: Float!
+  firstMedia: Media!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -132,6 +131,7 @@ type Query {
   getFollowRequests: [FollowRequest!]!
   getPost(postId: String!): Post!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsers!): [Post!]!
+  discoverPosts(input: GetPostsFromFollowedUsers!): [DiscoverPostsObject!]!
 }
 
 input GetPostsFromFollowedUsers {

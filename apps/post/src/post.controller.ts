@@ -165,4 +165,24 @@ export class PostController {
       payload.pageSize,
     );
   }
+
+  @MessagePattern({
+    cmd: 'discover_posts',
+  })
+  async discoverPosts(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+      page: number;
+      pageSize: number;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.discoverPosts(
+      payload.userId,
+      payload.page,
+      payload.pageSize,
+    );
+  }
 }

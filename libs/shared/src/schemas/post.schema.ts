@@ -55,9 +55,13 @@ export class Post {
   @Field()
   updatedAt: string;
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'Tag' }] })
-  @Field(() => [Tag], { nullable: true }) // Paylaşımın etiketleri
-  tags: Types.ObjectId[];
+  // @Prop({ type: [{ type: Types.ObjectId, ref: 'Tag' }] })
+  // @Field(() => [Tag], { nullable: true }) // Paylaşımın etiketleri
+  // tags: Types.ObjectId[];
+
+  @Prop({ type: [String] })
+  @Field(() => [String])
+  tags: string[];
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Like' }] })
   @Field(() => [Like], { nullable: true })
@@ -66,5 +70,9 @@ export class Post {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Comment' }] })
   @Field(() => [Comment], { nullable: true })
   comments: Types.ObjectId[];
+
+  @Prop({ type: Number, default: 0 })
+  @Field(() => Number)
+  score: number;
 }
 export const PostSchema = SchemaFactory.createForClass(Post);

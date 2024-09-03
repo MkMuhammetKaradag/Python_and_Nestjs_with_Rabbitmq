@@ -74,9 +74,13 @@ export class User {
   @Field() // GraphQL alanı olarak işaretleme
   updatedAt: string;
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'Interest' }] })
-  @Field(() => [Interest], { nullable: true }) // Kullanıcının ilgi alanları
-  interests: Types.ObjectId[];
+  // @Prop({ type: [{ type: Types.ObjectId, ref: 'Interest' }] })
+  // @Field(() => [Interest], { nullable: true }) // Kullanıcının ilgi alanları
+  // interests: Types.ObjectId[];
+
+  @Prop({ type: [String] })
+  @Field(() => [String])
+  interests: string[];
 
   // Yeni eklenen alanlar
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })

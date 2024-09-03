@@ -8,6 +8,7 @@ import {
   CreateMediaInput,
   CreatePostInput,
   CurrentUser,
+  DiscoverPostsObject,
   Like,
   Post,
   PUB_SUB,
@@ -332,6 +333,41 @@ export class PostResolver {
         this.postService.send(
           {
             cmd: 'get_posts_from_followed_users',
+          },
+          {
+            userId: user._id,
+            page: input.page,
+            pageSize: input.pageSize,
+          },
+        ),
+      );
+
+      return posts;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => [DiscoverPostsObject])
+  @UseGuards(AuthGuard)
+  async discoverPosts(
+    @Args('input') input: GetPostsFromFollowedUsers,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to comment a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+    try {
+      const posts = await firstValueFrom(
+        this.postService.send(
+          {
+            cmd: 'discover_posts',
           },
           {
             userId: user._id,
