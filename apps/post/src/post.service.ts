@@ -1,19 +1,18 @@
 import {
   Comment,
   CommentDocument,
-  CreateCommentInput,
   Like,
   LikeDocument,
   Post,
   PostDocument,
   PostStatus,
-  Product,
   PUB_SUB,
+  SharedService,
   User,
   UserDocument,
   UserRole,
 } from '@app/shared';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
@@ -23,7 +22,7 @@ import { StringifyOptions } from 'querystring';
 import { PipelineStage } from 'mongoose';
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Injectable()
-export class PostService {
+export class PostService implements OnModuleInit {
   constructor(
     @InjectModel(User.name, 'user')
     private userModel: Model<UserDocument>, // AUTH veritabanından User modeli
@@ -38,7 +37,35 @@ export class PostService {
     private postCommentModel: Model<CommentDocument>,
 
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+
+    private readonly sharedService: SharedService,
   ) {}
+  async onModuleInit() {
+    await this.sharedService.connect();
+    await this.subscribeToUserEvents();
+  }
+
+  private async subscribeToUserEvents() {
+    await this.sharedService.subscribeToEvent(
+      'user_events',
+      'user.followed',
+      this.handleUserFollowed.bind(this),
+    );
+  }
+
+  private async handleUserFollowed(data: {
+    followerId: string;
+    followedId: string;
+  }) {
+    try {
+      const { followerId, followedId } = data;
+      console.log(
+        `Processing follow event: ${followerId} followed ${followedId}`,
+      );
+    } catch (error) {
+      console.error('Error processing user.followed event:', error);
+    }
+  }
 
   //post creation function
   async createPost(createPost: {

@@ -2,6 +2,7 @@ import {
   FollowRequest,
   FollowRequestDocument,
   FollowRequestStatus,
+  SharedService,
   User,
   UserDocument,
 } from '@app/shared';
@@ -22,6 +23,8 @@ export class UserService {
     @InjectModel(User.name, 'user') private userModel: Model<UserDocument>,
     @InjectModel(FollowRequest.name, 'user')
     private followRequestModel: Model<FollowRequestDocument>,
+
+    private readonly sharedService: SharedService,
   ) {}
 
   async followUser(currentUserId: string, targetUserId: string) {
@@ -78,6 +81,15 @@ export class UserService {
       targetUser.followers.push(currentUserObjectId);
       await targetUser.save();
 
+      // Olayı yayınla
+      await this.sharedService.publishEvent('user_events', 'user.followedd', {
+        followerId: currentUserId,
+        followedId: targetUserId,
+      });
+
+      console.log(
+        `Published follow event: ${currentUserId} followed ${targetUserId}`,
+      );
       return { message: 'User followed successfully' };
     }
   }
