@@ -7,7 +7,7 @@ type User {
   firstName: String!
   lastName: String!
   email: String!
-  profilePhoto: Float
+  profilePhoto: String
   roles: [UserRole!]!
   isDeleted: Boolean!
   deletedAt: String
@@ -124,12 +124,23 @@ type DiscoverPostsObject {
   firstMedia: Media!
 }
 
+type GetPostObject {
+  _id: ID!
+  title: String!
+  tags: [String!]!
+  media: [Media!]!
+  createdAt: String!
+  likeCount: Float!
+  commentCount: Float!
+  user: User!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
   protectedQuery: String!
   getFollowRequests: [FollowRequest!]!
-  getPost(postId: String!): Post!
+  getPost(postId: String!): GetPostObject!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsers!): [Post!]!
   discoverPosts(input: GetPostsFromFollowedUsers!): [DiscoverPostsObject!]!
 }

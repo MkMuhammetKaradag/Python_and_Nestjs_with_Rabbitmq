@@ -9,6 +9,7 @@ import {
   CreatePostInput,
   CurrentUser,
   DiscoverPostsObject,
+  GetPostObject,
   Like,
   Post,
   PUB_SUB,
@@ -109,7 +110,7 @@ export class PostResolver {
     };
   }
 
-  @Query(() => Post)
+  @Query(() => GetPostObject)
   @UseGuards(AuthGuard)
   async getPost(
     @Args('postId') postId: string,

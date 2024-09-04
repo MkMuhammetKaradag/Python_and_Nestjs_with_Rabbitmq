@@ -36,6 +36,7 @@ export * from './types/object/LoginUserObject';
 export * from './types/object/SignUrlObject';
 export * from './types/object/RemoveLikeObject';
 export * from './types/object/DiscoverPostsObject';
+export * from './types/object/GetPostObject';
 
 //Guards
 export * from './guards/auth.guard';

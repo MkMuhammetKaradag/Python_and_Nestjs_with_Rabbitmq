@@ -54,7 +54,7 @@ export class User {
 
   @Prop()
   @Field({ nullable: true }) // Boş olabilir
-  profilePhoto: number;
+  profilePhoto: string;
 
   @Prop({ type: [String], enum: UserRole, default: [UserRole.USER] })
   @Field(() => [UserRole]) // GraphQL için enum dizisi olarak tanımlama

@@ -39,6 +39,8 @@ export class PostService {
 
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
+
+  //post creation function
   async createPost(createPost: {
     userId: string;
     title: string;
@@ -49,6 +51,7 @@ export class PostService {
       },
     ];
   }) {
+    // ull the user who will create the post
     const existingUser = await this.postUserModel.findById(createPost.userId);
     if (!existingUser) {
       throw new RpcException({
@@ -56,6 +59,7 @@ export class PostService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
+    // create post
     const post = new this.postModel({
       user: new Types.ObjectId(createPost.userId),
       title: createPost.title,
@@ -64,74 +68,98 @@ export class PostService {
     return await post.save();
   }
 
+  // post pull function
   async getPost(postId: string, currentUserId: string) {
-    try {
-      const post = await this.postModel
-        .findById(postId)
-        .populate({
-          path: 'user',
-          select: '_id profilPhoto firstName lastName isPrivate followers',
-        })
-        .populate({
-          path: 'likes',
-          select: '_id',
-          model: 'Like',
-        })
-        .populate({
-          path: 'comments',
-          select: '_id content createdAt user',
-          populate: {
-            path: 'user',
-            select: '_id email ',
-          },
-          model: 'Comment',
-        })
-        .exec();
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          _id: new Types.ObjectId(postId), // Fetch data matched with postId
+        },
+      },
+      {
+        $lookup: {
+          // Matching the post owner with the user table
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: '$user',
+      },
+      {
+        $lookup: {
+          // Checking whether the user is following the owner of the post
+          from: 'users',
+          let: { userId: '$user._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$_id', new Types.ObjectId(currentUserId)] },
+              },
+            },
+            {
+              $project: {
+                isFollowing: {
+                  $in: ['$$userId', '$following'],
+                },
+              },
+            },
+          ],
+          as: 'currentUser',
+        },
+      },
+      {
+        $unwind: '$currentUser',
+      },
+      {
+        $match: {
+          $or: [
+            { 'user.isPrivate': { $ne: true } },
+            { 'currentUser.isFollowing': true },
+            { 'user._id': new Types.ObjectId(currentUserId) },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          // Adding the number of likes and comments of the post as a new field
+          likeCount: { $size: { $ifNull: ['$likes', []] } },
+          commentCount: { $size: { $ifNull: ['$comments', []] } },
+        },
+      },
+      {
+        $project: {
+          // determining areas to return
+          _id: 1,
+          title: 1,
+          media: 1,
+          tags: 1,
+          createdAt: 1,
+          likeCount: 1,
+          commentCount: 1,
+          'user._id': 1,
+          'user.firstName': 1,
+          'user.lastName': 1,
+          'user.profilePhoto': 1,
+        },
+      },
+    ];
 
-      const postOwner = await this.userModel.findById(post.user._id);
-      const canViewPostOwner = this.canViewProfile(
-        postOwner,
-        currentUserId,
-        postOwner._id.toString(),
-      );
-      if (!post || !canViewPostOwner) {
-        throw new RpcException({
-          message: 'Post Not Found',
-          statusCode: HttpStatus.NOT_FOUND,
-        });
-      }
+    const posts = await this.postModel.aggregate(pipeline);
 
-      return post;
-    } catch (error) {
-      console.log(error);
+    if (posts.length === 0) {
       throw new RpcException({
         message: 'Post Not Found',
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
-  }
-  private canViewProfile(
-    user,
-    currentUserId: string,
-    postOwnerId: string,
-  ): boolean {
-    // Eğer profil mevcut kullanıcıya aitse veya mevcut kullanıcı post sahibiyse, her zaman görüntüleyebilir
-    if (
-      user._id.toString() === currentUserId ||
-      currentUserId === postOwnerId
-    ) {
-      return true;
-    }
 
-    if (!user.isPrivate) {
-      return true; // Profil gizli değilse herkes görebilir
-    }
-
-    // Profil gizliyse, sadece takipçiler görebilir
-    return user.followers.some(
-      (follower) => follower.toString() === currentUserId,
-    );
+    return posts[0];
   }
+
+  // A function created to ensure data consistency in the post service when a new user registers in the auth service.
   async createUser({
     id,
     firstName,
@@ -147,6 +175,7 @@ export class PostService {
     roles: UserRole[];
     password: string;
   }) {
+    // create user
     const user = new this.postUserModel({
       _id: id,
       firstName,
@@ -159,7 +188,9 @@ export class PostService {
     console.log('created user post ');
   }
 
+  // user like function
   async addLikePost(addLike: { postId: string; userId: string }) {
+    // the process of pulling the user and the post to be liked on
     const post = await this.postModel.findById(addLike.postId);
     const user = await this.userModel.findById(addLike.userId);
 
@@ -171,13 +202,14 @@ export class PostService {
     }
 
     try {
+      // create like
       const like = new this.postLikeModel({
         user: addLike.userId,
         post: addLike.postId,
       });
 
       const savedLike = await like.save();
-      // Post'un likes alanını güncelle
+      // Update the likes field of the post
       await this.postModel.findByIdAndUpdate(
         addLike.postId,
         { $addToSet: { likes: savedLike._id } },
@@ -196,7 +228,9 @@ export class PostService {
     }
   }
 
+  //user like removal function
   async removeLikePost(removeData: { postId: string; userId: string }) {
+    // the process of pulling the user and the post to be liked on
     const post = await this.postModel.findById(removeData.postId);
     const user = await this.userModel.findById(removeData.userId);
 
@@ -208,7 +242,7 @@ export class PostService {
     }
 
     try {
-      // Like'ı bul
+      //find likes
       const like = await this.postLikeModel.findOne({
         user: removeData.userId,
         post: removeData.postId,
@@ -221,10 +255,10 @@ export class PostService {
         });
       }
 
-      // Like'ı sil
+      // remove like
       await this.postLikeModel.findByIdAndDelete(like._id);
 
-      // Post'un likes dizisinden like'ı kaldır
+      // Remove like from post's likes array
       await this.postModel.findByIdAndUpdate(
         removeData.postId,
         { $pull: { likes: like._id } },
@@ -241,11 +275,13 @@ export class PostService {
     }
   }
 
+  // Designed for user to comment on post
   async createComment(createCommnetData: {
     userId: string;
     postId: string;
     content: string;
   }) {
+    // the process of pulling the user and the post to be commented on
     const post = await this.postModel.findById(createCommnetData.postId);
     const user = await this.userModel.findById(createCommnetData.userId);
 
@@ -255,18 +291,23 @@ export class PostService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
+
+    // create new comment
     const newComment = new this.postCommentModel({
       user: createCommnetData.userId,
       post: createCommnetData.postId,
       content: createCommnetData.content,
     });
     const savedComment = await newComment.save();
+
+    //save created comment in post
     await this.postModel.findByIdAndUpdate(
       createCommnetData.postId,
       { $addToSet: { comments: savedComment._id } },
       { new: true },
     );
 
+    // publish created comment
     this.pubSub.publish(CREATE_COMMENT_POST, {
       createCommentPost: {
         _id: savedComment._id,
@@ -277,11 +318,13 @@ export class PostService {
     return savedComment;
   }
 
+  //Designed so that the user can edit their comments
   async updateComment(updateCommnetData: {
     userId: string;
     commentId: string;
     content: string;
   }) {
+    // find user's comment
     const comment = await this.postCommentModel.findOne({
       _id: updateCommnetData.commentId,
       user: updateCommnetData.userId,
@@ -293,17 +336,20 @@ export class PostService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
+
+    // Change the comment content and save again.
     comment.content = updateCommnetData.content;
     const updatedComment = await comment.save();
     return updatedComment;
   }
 
+  // Designed to display posts shared by users' friends on the home page
   async getPostsFromFollowedUsers(
     userId: string,
     page: number = 1,
     pageSize: number = 10,
   ) {
-    // Kullanıcının takip ettiği kullanıcıları alın
+    // Get users that user is following
     const user = await this.postUserModel
       .findById(userId)
       .populate('following')
@@ -316,13 +362,11 @@ export class PostService {
       });
     }
 
-    // const followingIds = user.following.map((followedUser) => followedUser._id);
-
-    // Sayfalama parametrelerini ayarlayın
+    // Set pagination parameters
     const skip = (page - 1) * pageSize;
     const limit = pageSize;
 
-    // Takip ettiği kullanıcıların postlarını alın,
+    // Get the posts of the users you follow,
     const posts = await this.postModel
       .find({ user: { $in: user.following } })
       .skip(skip)
@@ -333,6 +377,7 @@ export class PostService {
     return posts;
   }
 
+  // The process of pulling posts according to the user's interests
   async discoverPosts(
     userId: string,
     page: number = 1,
@@ -344,9 +389,8 @@ export class PostService {
 
     const skip = (page - 1) * pageSize;
     const limit = pageSize;
-    console.log('User interests:', user.interests);
-    console.log('User following:', user.following);
 
+    // Let's take the owner of the post
     let pipeline: PipelineStage[] = [
       {
         $match: {
@@ -355,7 +399,7 @@ export class PostService {
       },
       {
         $lookup: {
-          from: 'users', // Emin olun ki bu, User modelinizin koleksiyon adıyla eşleşiyor
+          from: 'users',
           localField: 'user',
           foreignField: '_id',
           as: 'userInfo',
@@ -364,7 +408,7 @@ export class PostService {
       {
         $unwind: {
           path: '$userInfo',
-          preserveNullAndEmptyArrays: true, // Bu, eşleşme olmasa bile belgeyi korur
+          preserveNullAndEmptyArrays: true, // This preserves the document even if there is no match
         },
       },
       {
@@ -374,18 +418,7 @@ export class PostService {
       },
     ];
 
-    let posts = await this.postModel.aggregate(pipeline);
-    // console.log('Number of posts after user lookup:', posts);
-
-    // if (posts.length > 0) {
-    //   console.log('Sample post:', JSON.stringify(posts[0], null, 2));
-    // }
-
-    if (posts.length === 0) {
-      return [];
-    }
-
-    // Gizlilik ve takip filtrelerini ekleyelim
+    // Let's add privacy and tracking filters
     pipeline.push({
       $match: {
         $or: [
@@ -419,17 +452,7 @@ export class PostService {
       },
     } as PipelineStage);
 
-    posts = await this.postModel.aggregate(pipeline);
-    console.log(
-      'Number of posts after privacy and following filters:',
-      posts.length,
-    );
-
-    if (posts.length === 0) {
-      return [];
-    }
-
-    // Skor hesaplama ve sıralama kısmını ekleyin (önceki koddan)
+    // Add score calculation, new fields and ranking section
     pipeline.push(
       {
         $addFields: {
@@ -459,8 +482,6 @@ export class PostService {
         $addFields: {
           score: {
             $add: [
-              // { $size: { $ifNull: ['$likes', []] } },
-              // { $multiply: [{ $size: { $ifNull: ['$comments', []] } }, 2] },
               '$likeCount',
               { $multiply: ['$commentCount', 2] },
               { $multiply: ['$matchingTags', 10] },
@@ -484,6 +505,9 @@ export class PostService {
         $sort: { score: -1 },
       } as PipelineStage,
       {
+        $skip: skip,
+      } as PipelineStage,
+      {
         $limit: limit,
       } as PipelineStage,
       {
@@ -492,12 +516,12 @@ export class PostService {
           likeCount: 1,
           commentCount: 1,
           firstMedia: 1,
-          score:1
+          score: 1,
         },
       } as PipelineStage,
     );
 
-    posts = await this.postModel.aggregate(pipeline);
+    const posts = await this.postModel.aggregate(pipeline);
     return posts;
   }
 }
