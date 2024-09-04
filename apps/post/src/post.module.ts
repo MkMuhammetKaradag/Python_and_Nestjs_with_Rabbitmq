@@ -17,6 +17,8 @@ import {
   UserSchema,
 } from '@app/shared';
 import { MongooseModule } from '@nestjs/mongoose';
+import { UserService } from './user.service';
+import { PostUserController } from './postUser.controller';
 
 @Module({
   imports: [
@@ -41,9 +43,10 @@ import { MongooseModule } from '@nestjs/mongoose';
       'user', // authConnection bağlantısı ile ilişkilendir
     ),
   ],
-  controllers: [PostController],
+  controllers: [PostController, PostUserController],
   providers: [
     PostService,
+    UserService,
     {
       provide: 'SharedServiceInterface',
       useClass: SharedService,

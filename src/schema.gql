@@ -156,6 +156,7 @@ type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
   followUser(targetUserId: String!): String!
+  unFollowUser(targetUserId: String!): String!
   acceptFollowRequest(requestId: String!): String!
   rejectFollowRequest(requestId: String!): String!
   createPost(input: CreatePostInput!): Post!

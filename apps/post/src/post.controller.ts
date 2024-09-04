@@ -8,11 +8,13 @@ import {
   RmqContext,
 } from '@nestjs/microservices';
 import { RegisterUserInput, SharedService } from '@app/shared';
+import { UserService } from './user.service';
 
 @Controller()
 export class PostController {
   constructor(
     private readonly postService: PostService,
+    private readonly userService: UserService,
     @Inject('SharedServiceInterface')
     private readonly sharedService: SharedService,
   ) {}
@@ -53,35 +55,6 @@ export class PostController {
       getPost.postId,
       getPost.currentUserId,
     );
-  }
-
-  @EventPattern({
-    cmd: 'created_user',
-  })
-  async handleUserCreatedEvent(
-    @Ctx() context: RmqContext,
-    @Payload()
-    createUser: {
-      userId: string;
-      user: RegisterUserInput;
-    },
-  ) {
-    // User created olayı geldiğinde yapılacak işlemler
-    const {
-      userId,
-      user: { firstName, lastName, email, roles, password },
-    } = createUser;
-
-    // Post servisi içerisinde bu kullanıcıyla ilgili yapılacak işlemler
-    await this.postService.createUser({
-      id: userId,
-      firstName,
-      lastName,
-      email,
-      roles,
-      password,
-    });
-    this.sharedService.acknowledgeMessage(context);
   }
 
   @MessagePattern({
@@ -184,18 +157,5 @@ export class PostController {
       payload.page,
       payload.pageSize,
     );
-  }
-
-  @EventPattern('user_followed')
-  async handleUserCreated(
-    @Ctx() context: RmqContext,
-    @Payload()
-    payload: {
-      followerId: string;
-      followedId: string;
-    },
-  ) {
-    console.log('followed payload', payload);
-    this.sharedService.acknowledgeMessage(context);
   }
 }

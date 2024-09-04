@@ -43,6 +43,24 @@ export class UserController {
   }
 
   @MessagePattern({
+    cmd: 'unFollow_user',
+  })
+  async unFollowUser(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      targetUserId: string;
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.unFollowUser(
+      payload.currentUserId,
+      payload.targetUserId,
+    );
+  }
+
+  @MessagePattern({
     cmd: 'accept_follow_request',
   })
   async acceptFollowRequest(

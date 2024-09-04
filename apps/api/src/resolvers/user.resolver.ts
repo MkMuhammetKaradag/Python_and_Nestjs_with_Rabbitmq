@@ -53,7 +53,41 @@ export class UserResolver {
       });
     }
   }
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
+  async unFollowUser(
+    @Args('targetUserId') targetUserId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<{
+        message: string;
+      }>(
+        this.userService.send(
+          {
+            cmd: 'unFollow_user',
+          },
+          {
+            currentUserId: user._id,
+            targetUserId: targetUserId,
+          },
+        ),
+      );
 
+      return data.message;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
   @Mutation(() => String)
   @UseGuards(AuthGuard)
   async acceptFollowRequest(

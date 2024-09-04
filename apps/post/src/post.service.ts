@@ -22,7 +22,7 @@ import { StringifyOptions } from 'querystring';
 import { PipelineStage } from 'mongoose';
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Injectable()
-export class PostService implements OnModuleInit {
+export class PostService {
   constructor(
     @InjectModel(User.name, 'user')
     private userModel: Model<UserDocument>, // AUTH veritabanından User modeli
@@ -37,35 +37,7 @@ export class PostService implements OnModuleInit {
     private postCommentModel: Model<CommentDocument>,
 
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-
-    private readonly sharedService: SharedService,
   ) {}
-  async onModuleInit() {
-    // await this.sharedService.connect();
-    // await this.subscribeToUserEvents();
-  }
-
-  // private async subscribeToUserEvents() {
-  //   await this.sharedService.subscribeToEvent(
-  //     'user_events',
-  //     'user.followed',
-  //     this.handleUserFollowed.bind(this),
-  //   );
-  // }
-
-  // private async handleUserFollowed(data: {
-  //   followerId: string;
-  //   followedId: string;
-  // }) {
-  //   try {
-  //     const { followerId, followedId } = data;
-  //     console.log(
-  //       `Processing follow event: ${followerId} followed ${followedId}`,
-  //     );
-  //   } catch (error) {
-  //     console.error('Error processing user.followed event:', error);
-  //   }
-  // }
 
   //post creation function
   async createPost(createPost: {
@@ -186,34 +158,7 @@ export class PostService implements OnModuleInit {
     return posts[0];
   }
 
-  // A function created to ensure data consistency in the post service when a new user registers in the auth service.
-  async createUser({
-    id,
-    firstName,
-    lastName,
-    email,
-    roles,
-    password,
-  }: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    roles: UserRole[];
-    password: string;
-  }) {
-    // create user
-    const user = new this.postUserModel({
-      _id: id,
-      firstName,
-      lastName,
-      email,
-      roles,
-      password: 'temporary',
-    });
-    await user.save();
-    console.log('created user post ');
-  }
+
 
   // user like function
   async addLikePost(addLike: { postId: string; userId: string }) {
