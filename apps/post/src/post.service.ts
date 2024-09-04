@@ -41,31 +41,31 @@ export class PostService implements OnModuleInit {
     private readonly sharedService: SharedService,
   ) {}
   async onModuleInit() {
-    await this.sharedService.connect();
-    await this.subscribeToUserEvents();
+    // await this.sharedService.connect();
+    // await this.subscribeToUserEvents();
   }
 
-  private async subscribeToUserEvents() {
-    await this.sharedService.subscribeToEvent(
-      'user_events',
-      'user.followed',
-      this.handleUserFollowed.bind(this),
-    );
-  }
+  // private async subscribeToUserEvents() {
+  //   await this.sharedService.subscribeToEvent(
+  //     'user_events',
+  //     'user.followed',
+  //     this.handleUserFollowed.bind(this),
+  //   );
+  // }
 
-  private async handleUserFollowed(data: {
-    followerId: string;
-    followedId: string;
-  }) {
-    try {
-      const { followerId, followedId } = data;
-      console.log(
-        `Processing follow event: ${followerId} followed ${followedId}`,
-      );
-    } catch (error) {
-      console.error('Error processing user.followed event:', error);
-    }
-  }
+  // private async handleUserFollowed(data: {
+  //   followerId: string;
+  //   followedId: string;
+  // }) {
+  //   try {
+  //     const { followerId, followedId } = data;
+  //     console.log(
+  //       `Processing follow event: ${followerId} followed ${followedId}`,
+  //     );
+  //   } catch (error) {
+  //     console.error('Error processing user.followed event:', error);
+  //   }
+  // }
 
   //post creation function
   async createPost(createPost: {

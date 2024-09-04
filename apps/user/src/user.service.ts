@@ -9,10 +9,11 @@ import {
 import {
   ConflictException,
   HttpStatus,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { GraphQLError } from 'graphql';
 import { Model, Types } from 'mongoose';
@@ -24,7 +25,8 @@ export class UserService {
     @InjectModel(FollowRequest.name, 'user')
     private followRequestModel: Model<FollowRequestDocument>,
 
-    private readonly sharedService: SharedService,
+    @Inject('POST_SERVICE')
+    private readonly postServiceClient: ClientProxy,
   ) {}
 
   async followUser(currentUserId: string, targetUserId: string) {
@@ -81,12 +83,11 @@ export class UserService {
       targetUser.followers.push(currentUserObjectId);
       await targetUser.save();
 
-      // Olayı yayınla
-      await this.sharedService.publishEvent('user_events', 'user.followedd', {
+
+      this.postServiceClient.emit('user_followed', {
         followerId: currentUserId,
         followedId: targetUserId,
       });
-
       console.log(
         `Published follow event: ${currentUserId} followed ${targetUserId}`,
       );

@@ -185,4 +185,17 @@ export class PostController {
       payload.pageSize,
     );
   }
+
+  @EventPattern('user_followed')
+  async handleUserCreated(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      followerId: string;
+      followedId: string;
+    },
+  ) {
+    console.log('followed payload', payload);
+    this.sharedService.acknowledgeMessage(context);
+  }
 }

@@ -19,6 +19,7 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true,
     }),
     SharedModule,
+    SharedModule.registerRmq('POST_SERVICE', 'POST'),
     MongoDBModule.forRoot('USER', 'user'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
       [
