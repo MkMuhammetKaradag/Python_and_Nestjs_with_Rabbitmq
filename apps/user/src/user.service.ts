@@ -89,7 +89,18 @@ export class UserService {
 
     return [currentUser, targetUser];
   }
+  private async findUser(userId: string): Promise<UserDocument> {
+    const user = await this.userModel.findById(userId);
 
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    return user;
+  }
   private validateFollowAction(currentUser: User, targetUser: User) {
     const isAlreadyFollowing = this.isUserFollowing(
       currentUser,
@@ -294,5 +305,27 @@ export class UserService {
     return this.followRequestModel
       .find({ to: currentUserId, status: 'pending' })
       .populate('from', 'firstName lastName profilePhoto');
+  }
+
+  async setUserProfilePrivate(currentUserId: string, isPrivate: boolean) {
+    try {
+      const user = await this.findUser(currentUserId);
+
+      if (user.isPrivate === isPrivate) {
+        throw new RpcException({
+          message: `User profile is already ${isPrivate}`,
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      }
+      user.isPrivate = isPrivate;
+      await user.save();
+
+      return 'user tes private success';
+    } catch (error) {
+      throw new RpcException({
+        message: error.message,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 }

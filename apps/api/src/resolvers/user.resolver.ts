@@ -188,4 +188,37 @@ export class UserResolver {
       });
     }
   }
+
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
+  async setUserProfilePrivate(
+    @CurrentUser() user: any,
+    @Args('isPrivate') isPrivate: boolean,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<string>(
+        this.userService.send(
+          {
+            cmd: 'set_user_profile_private',
+          },
+          {
+            currentUserId: user._id,
+            isPrivate,
+          },
+        ),
+      );
+      return  data
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
 }

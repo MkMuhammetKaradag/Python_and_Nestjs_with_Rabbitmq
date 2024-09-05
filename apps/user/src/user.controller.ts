@@ -107,4 +107,22 @@ export class UserController {
     this.sharedService.acknowledgeMessage(context);
     return this.userService.getFollowRequests(getFollowRequests.currentUserId);
   }
+
+  @MessagePattern({
+    cmd: 'set_user_profile_private',
+  })
+  async setUserProfilePrivate(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      isPrivate: boolean;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.setUserProfilePrivate(
+      payload.currentUserId,
+      payload.isPrivate,
+    );
+  }
 }

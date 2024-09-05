@@ -159,6 +159,7 @@ type Mutation {
   unFollowUser(targetUserId: String!): String!
   acceptFollowRequest(requestId: String!): String!
   rejectFollowRequest(requestId: String!): String!
+  setUserProfilePrivate(isPrivate: Boolean!): String!
   createPost(input: CreatePostInput!): Post!
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
   addLikePost(postId: String!): Like!
