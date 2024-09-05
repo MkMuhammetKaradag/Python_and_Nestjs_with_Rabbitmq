@@ -31,6 +31,7 @@ export * from './types/input/CreateCommentInput';
 export * from './types/input/UpdateCommentInput ';
 export * from './types/input/CreateMediaInput';
 export * from './types/input/ForgotPasswordInput';
+export * from './types/input/ResetPasswordInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';

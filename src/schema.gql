@@ -157,6 +157,7 @@ type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
   forgotPassword(input: ForgotPasswordInput!): String!
+  resetPassword(input: ResetPasswordInput!): User!
   followUser(targetUserId: String!): String!
   unFollowUser(targetUserId: String!): String!
   acceptFollowRequest(requestId: String!): String!
@@ -199,6 +200,11 @@ input ActivationUserInput {
 
 input ForgotPasswordInput {
   email: String!
+}
+
+input ResetPasswordInput {
+  token: String!
+  password: String!
 }
 
 input CreatePostInput {

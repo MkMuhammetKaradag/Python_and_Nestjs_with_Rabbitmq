@@ -297,5 +297,19 @@ export class AuthService {
     return forgotPasswordToken;
   }
 
- 
+  async resetPassword(password: string, token: string) {
+    const decoded = await this.jwtService.decode(token);
+
+    if (!decoded || decoded?.exp * 1000 < Date.now()) {
+      throw new RpcException({
+        message: 'Invalid token!',
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+    const user = await this.userModel.findOne({ email: decoded.user.email });
+    user.password = await this.hashPassword(password);
+    await user.save();
+
+    return user;
+  }
 }

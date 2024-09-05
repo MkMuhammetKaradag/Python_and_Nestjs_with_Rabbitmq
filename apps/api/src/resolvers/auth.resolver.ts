@@ -7,12 +7,13 @@ import {
   LoginUserObject,
   RegisterUserInput,
   RegisterUserObject,
+  ResetPasswordInput,
   User,
 } from '@app/shared';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateUserInput } from '../inputTypes/CreateUserInput';
 import { Inject, UseGuards } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, MessagePattern } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
 import { Response } from 'express';
@@ -184,6 +185,27 @@ export class AuthResolver {
           },
           {
             email: input.email,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Mutation(() => User)
+  async resetPassword(@Args('input') input: ResetPasswordInput) {
+    try {
+      const data = await firstValueFrom(
+        this.authService.send(
+          {
+            cmd: 'reset_password',
+          },
+          {
+            ...input,
           },
         ),
       );

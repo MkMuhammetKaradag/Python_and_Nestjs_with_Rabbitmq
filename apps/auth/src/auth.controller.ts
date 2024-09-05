@@ -134,15 +134,31 @@ export class AuthController {
   }
 
   @MessagePattern({
-    cmd:"forgot_password"
+    cmd: 'forgot_password',
   })
   async forgotPassword(
-    @Ctx() context:RmqContext,
-    @Payload() payload:{
-      email:string
-    }
-   ){
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      email: string;
+    },
+  ) {
     this.sharedService.acknowledgeMessage(context);
     return this.authService.forgotPassword(payload.email);
-   }
+  }
+
+  @MessagePattern({
+    cmd: 'reset_password',
+  })
+  async resetPassword(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      password: string;
+      token: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.resetPassword(payload.password, payload.token);
+  }
 }
