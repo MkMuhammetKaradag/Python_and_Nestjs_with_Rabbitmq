@@ -1,4 +1,4 @@
-import { User, UserDocument, UserRole } from '@app/shared';
+import { CurrentUser, User, UserDocument, UserRole } from '@app/shared';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 
@@ -126,5 +126,20 @@ export class UserService {
       message,
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     });
+  }
+
+
+  async changeUserProfilePrivate(currentUserId: string, isPrivate: boolean) {
+    try {
+      const user = await this.postUserModel.findById(currentUserId)
+      user.isPrivate = isPrivate;
+      await user.save();
+
+    } catch (error) {
+      throw new RpcException({
+        message: error.message,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 }

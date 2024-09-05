@@ -78,4 +78,21 @@ export class PostUserController {
       this.sharedService.nacknowledgeMessage(context);
     }
   }
+
+  @EventPattern('user_isPrivate')
+  async changeUserProfilePrivate(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      isPrivate: boolean;
+    },
+  ) {
+    try {
+       this.userService.changeUserProfilePrivate(payload.currentUserId, payload.isPrivate);
+      this.sharedService.acknowledgeMessage(context);
+    } catch (error) {
+      this.sharedService.nacknowledgeMessage(context);
+    }
+  }
 }

@@ -188,20 +188,20 @@ export class UserService {
     );
 
     await Promise.all([currentUser.save(), targetUser.save()]);
-
-    this.emitUnfollowEvent(
-      currentUser._id.toString(),
-      targetUser._id.toString(),
-    );
+    const payload = {
+      followerId: currentUser._id.toString(),
+      followedId: targetUser._id.toString(),
+    };
+    this.emitEvent('user_unFollowed', payload);
   }
 
   private emitFollowEvent(followerId: string, followedId: string) {
     this.postServiceClient.emit('user_followed', { followerId, followedId });
   }
 
-  private emitUnfollowEvent(followerId: string, followedId: string) {
-    console.log('ok');
-    this.postServiceClient.emit('user_unFollowed', { followerId, followedId });
+  private emitEvent(cmd: string, payload: any) {
+    // this.postServiceClient.emit('user_unFollowed', { followerId, followedId });
+    this.postServiceClient.emit(cmd, payload);
   }
 
   private handleUserActionError(error: any, message: string) {
@@ -319,7 +319,7 @@ export class UserService {
       }
       user.isPrivate = isPrivate;
       await user.save();
-
+      this.emitEvent('user_isPrivate', { currentUserId, isPrivate });
       return 'user tes private success';
     } catch (error) {
       throw new RpcException({
