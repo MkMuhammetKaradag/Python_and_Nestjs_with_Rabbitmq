@@ -30,6 +30,7 @@ export * from './types/input/SignUrlInput';
 export * from './types/input/CreateCommentInput';
 export * from './types/input/UpdateCommentInput ';
 export * from './types/input/CreateMediaInput';
+export * from './types/input/ForgotPasswordInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';

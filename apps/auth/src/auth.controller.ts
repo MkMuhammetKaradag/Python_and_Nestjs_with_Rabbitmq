@@ -122,7 +122,7 @@ export class AuthController {
   @MessagePattern({
     cmd: 'get_me',
   })
-  asyncGetMe(
+  async GetMe(
     @Ctx() context: RmqContext,
     @Payload()
     getMe: {
@@ -132,4 +132,17 @@ export class AuthController {
     this.sharedService.acknowledgeMessage(context);
     return this.authService.getMe(getMe.userId);
   }
+
+  @MessagePattern({
+    cmd:"forgot_password"
+  })
+  async forgotPassword(
+    @Ctx() context:RmqContext,
+    @Payload() payload:{
+      email:string
+    }
+   ){
+    this.sharedService.acknowledgeMessage(context);
+    return this.authService.forgotPassword(payload.email);
+   }
 }

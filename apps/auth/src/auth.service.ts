@@ -20,6 +20,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,6 +32,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
 
     private readonly emailService: EmailService,
+
+    private readonly configService: ConfigService,
 
     @Inject('POST_SERVICE')
     private readonly postService: ClientProxy,
@@ -55,7 +58,7 @@ export class AuthService {
 
   async createActivateToken(user: RegisterUserInput) {
     const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
-    console.log(activationCode);
+
     const token = await this.jwtService.signAsync(
       {
         user,
@@ -253,4 +256,46 @@ export class AuthService {
       deletedAt: { $exists: false },
     });
   }
+
+  async forgotPassword(email: string) {
+    const user = await this.userModel.findOne({
+      email,
+    });
+
+    if (!user) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    const forgotPasswordToken = await this.generateForgotPasswordLink(user);
+    const resetPasswordUrl =
+      this.configService.get<string>('CLIENT_SIDE_URI') +
+      `reset-password?verify=${forgotPasswordToken}`;
+
+    await this.emailService.sendMail({
+      email,
+      subject: 'Reset your Password!',
+      template: './forgot-password',
+      name: user.firstName + user.lastName,
+      activationCode: resetPasswordUrl,
+    });
+
+    return `Your forgot password request succesful!`;
+  }
+
+  async generateForgotPasswordLink(user: User) {
+    const forgotPasswordToken = this.jwtService.sign(
+      {
+        user,
+      },
+      {
+        secret: this.configService.get<string>('FORGOT_PASSWORD_SECRET'),
+        expiresIn: '5m',
+      },
+    );
+    return forgotPasswordToken;
+  }
+
+ 
 }

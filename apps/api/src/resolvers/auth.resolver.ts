@@ -2,6 +2,7 @@ import {
   ActivationUserInput,
   AuthGuard,
   CurrentUser,
+  ForgotPasswordInput,
   LoginUserInput,
   LoginUserObject,
   RegisterUserInput,
@@ -14,6 +15,7 @@ import { Inject, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
+import { Response } from 'express';
 
 @Resolver('auth')
 export class AuthResolver {
@@ -66,6 +68,29 @@ export class AuthResolver {
       throw new GraphQLError(error.message, {
         extensions: { ...error },
       });
+    }
+  }
+
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
+  async logout(@Context() context: { res: Response }) {
+    const { res } = context;
+    try {
+      res.clearCookie('refresh_token', {
+        path: '/', // Çerezin path ayarı
+        httpOnly: true, // Çerezin httpOnly ayarı (varsa)
+        secure: true, // Çerezin secure ayarı (eğer HTTPS üzerinde çalışıyorsanız)
+        sameSite: 'strict', // Çerezin sameSite ayarı
+      });
+      res.clearCookie('access_token', {
+        path: '/', // Çerezin path ayarı
+        httpOnly: true, // Çerezin httpOnly ayarı (varsa)
+        secure: true, // Çerezin secure ayarı (eğer HTTPS üzerinde çalışıyorsanız)
+        sameSite: 'strict', // Çerezin sameSite ayarı
+      });
+      return 'successfully logged out ';
+    } catch (error) {
+      throw new Error(`Logout failed: ${error.message}`);
     }
   }
 
@@ -138,6 +163,27 @@ export class AuthResolver {
           },
           {
             userId: user._id,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Mutation(() => String)
+  async forgotPassword(@Args('input') input: ForgotPasswordInput) {
+    try {
+      const data = await firstValueFrom<string>(
+        this.authService.send(
+          {
+            cmd: 'forgot_password',
+          },
+          {
+            email: input.email,
           },
         ),
       );

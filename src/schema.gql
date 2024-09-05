@@ -153,8 +153,10 @@ input GetPostsFromFollowedUsers {
 type Mutation {
   createUser(input: CreateUserInput!): User!
   loginUser(input: LoginUserInput!): LoginUserObject!
+  logout: String!
   registerUser(input: RegisterUserInput!): RegisterUserObject!
   activationUser(input: ActivationUserInput!): User!
+  forgotPassword(input: ForgotPasswordInput!): String!
   followUser(targetUserId: String!): String!
   unFollowUser(targetUserId: String!): String!
   acceptFollowRequest(requestId: String!): String!
@@ -193,6 +195,10 @@ input RegisterUserInput {
 input ActivationUserInput {
   activationToken: String!
   activationCode: String!
+}
+
+input ForgotPasswordInput {
+  email: String!
 }
 
 input CreatePostInput {
