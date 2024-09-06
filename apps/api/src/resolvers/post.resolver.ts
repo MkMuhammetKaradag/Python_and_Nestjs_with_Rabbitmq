@@ -10,6 +10,7 @@ import {
   CurrentUser,
   DiscoverPostsObject,
   GetPostObject,
+  GetPostsFromFollowedUsersObject,
   Like,
   Post,
   PUB_SUB,
@@ -318,7 +319,7 @@ export class PostResolver {
     }
   }
 
-  @Query(() => [Post])
+  @Query(() => [GetPostsFromFollowedUsersObject])
   @UseGuards(AuthGuard)
   async getPostsFromFollowedUsers(
     @Args('input') input: GetPostsFromFollowedUsers,
@@ -330,7 +331,7 @@ export class PostResolver {
       });
     }
     try {
-      const posts = await firstValueFrom<Post[]>(
+      const posts = await firstValueFrom<GetPostsFromFollowedUsersObject[]>(
         this.postService.send(
           {
             cmd: 'get_posts_from_followed_users',

@@ -135,13 +135,22 @@ type GetPostObject {
   user: User!
 }
 
+type GetPostsFromFollowedUsersObject {
+  _id: ID!
+  likeCount: Float!
+  commentCount: Float!
+  title: String!
+  user: User!
+  media: [Media!]!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
   protectedQuery: String!
   getFollowRequests: [FollowRequest!]!
   getPost(postId: String!): GetPostObject!
-  getPostsFromFollowedUsers(input: GetPostsFromFollowedUsers!): [Post!]!
+  getPostsFromFollowedUsers(input: GetPostsFromFollowedUsers!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsers!): [DiscoverPostsObject!]!
 }
 

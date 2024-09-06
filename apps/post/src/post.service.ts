@@ -20,6 +20,7 @@ import { Model, Types } from 'mongoose';
 import path from 'path';
 import { StringifyOptions } from 'querystring';
 import { PipelineStage } from 'mongoose';
+import { userInfo } from 'os';
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Injectable()
 export class PostService {
@@ -157,8 +158,6 @@ export class PostService {
 
     return posts[0];
   }
-
-
 
   // user like function
   async addLikePost(addLike: { postId: string; userId: string }) {
@@ -338,13 +337,65 @@ export class PostService {
     const skip = (page - 1) * pageSize;
     const limit = pageSize;
 
-    // Get the posts of the users you follow,
-    const posts = await this.postModel
-      .find({ user: { $in: user.following } })
-      .skip(skip)
-      .limit(limit)
-      .populate('user')
-      .exec();
+    // Let's take the owner of the post
+
+    // Pipeline sadece takip edilen kullanıcıların postlarını çeker
+    let pipeline: PipelineStage[] = [
+      {
+        $match: {
+          status: PostStatus.DRAFT, // DRAFT yerine sadece yayımlanmış postları çek
+          user: {
+            $in: user.following.map((id) => new Types.ObjectId(id)),
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          likeCount: { $size: { $ifNull: ['$likes', []] } },
+          commentCount: { $size: { $ifNull: ['$comments', []] } },
+        },
+      },
+      {
+        $sort: { createdAt: -1 }, // Postları en yeniye göre sırala
+      },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
+      {
+        $project: {
+          _id: 1,
+          likeCount: 1,
+          commentCount: 1,
+          title: 1,
+          media: 1,
+          user: {
+            _id: 1,
+            firstName: 1,
+            lastName: 1,
+            profilePhoto: 1,
+          },
+        },
+      },
+    ];
+
+    const posts = await this.postModel.aggregate(pipeline);
 
     return posts;
   }

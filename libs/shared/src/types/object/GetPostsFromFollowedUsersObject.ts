@@ -1,9 +1,10 @@
 import { Media } from '@app/shared/schemas/media.object';
+import { User } from '@app/shared/schemas/user.schema';
 
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
-export class DiscoverPostsObject {
+export class GetPostsFromFollowedUsersObject {
   @Field(() => ID)
   _id: string;
 
@@ -14,8 +15,11 @@ export class DiscoverPostsObject {
   commentCount: number;
 
   @Field()
-  score: number;
+  title: string;
 
-  @Field(() => Media)
-  firstMedia: Media;
+  @Field(() => User)
+  user: User;
+
+  @Field(() => [Media])
+  media: Media[];
 }
