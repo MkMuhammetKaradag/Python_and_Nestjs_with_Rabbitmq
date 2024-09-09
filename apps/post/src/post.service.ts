@@ -22,6 +22,11 @@ import { StringifyOptions } from 'querystring';
 import { PipelineStage } from 'mongoose';
 import { userInfo } from 'os';
 const CREATE_COMMENT_POST = 'createCommentPost';
+
+interface AggregationResult {
+  paginatedResults: Post[];
+  totalCount: { count: number }[];
+}
 @Injectable()
 export class PostService {
   constructor(
@@ -162,6 +167,7 @@ export class PostService {
   // user like function
   async addLikePost(addLike: { postId: string; userId: string }) {
     // the process of pulling the user and the post to be liked on
+
     const post = await this.postModel.findById(addLike.postId);
     const user = await this.userModel.findById(addLike.userId);
 
@@ -172,31 +178,18 @@ export class PostService {
       });
     }
 
-    try {
-      // create like
-      const like = new this.postLikeModel({
-        user: addLike.userId,
-        post: addLike.postId,
+    if (post.likes.includes(new Types.ObjectId(addLike.userId))) {
+      throw new RpcException({
+        message: 'User has  liked this post',
+        statusCode: HttpStatus.BAD_REQUEST,
       });
-
-      const savedLike = await like.save();
-      // Update the likes field of the post
-      await this.postModel.findByIdAndUpdate(
-        addLike.postId,
-        { $addToSet: { likes: savedLike._id } },
-        { new: true },
-      );
-      return savedLike;
-    } catch (error) {
-      if (error.code === 11000) {
-        // Duplicate key error code
-        throw new RpcException({
-          message: 'User has already liked this post',
-          statusCode: HttpStatus.CONFLICT,
-        });
-      }
-      throw error; // Diğer hataları fırlat
     }
+    await this.postModel.findByIdAndUpdate(
+      addLike.postId,
+      { $addToSet: { likes: user._id } },
+      { new: true },
+    );
+    return 'success';
   }
 
   //user like removal function
@@ -212,38 +205,19 @@ export class PostService {
       });
     }
 
-    try {
-      //find likes
-      const like = await this.postLikeModel.findOne({
-        user: removeData.userId,
-        post: removeData.postId,
-      });
-
-      if (!like) {
-        throw new RpcException({
-          message: 'Like not found',
-          statusCode: HttpStatus.NOT_FOUND,
-        });
-      }
-
-      // remove like
-      await this.postLikeModel.findByIdAndDelete(like._id);
-
-      // Remove like from post's likes array
-      await this.postModel.findByIdAndUpdate(
-        removeData.postId,
-        { $pull: { likes: like._id } },
-        { new: true },
-      );
-
-      return { success: true, message: 'Like removed successfully' };
-    } catch (error) {
+    if (!post.likes.includes(new Types.ObjectId(removeData.userId))) {
       throw new RpcException({
-        message: 'Error removing like',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        error: error.message,
+        message: 'User has not liked this post',
+        statusCode: HttpStatus.BAD_REQUEST,
       });
     }
+    await this.postModel.findByIdAndUpdate(
+      removeData.postId,
+      { $pull: { likes: user._id } },
+      { new: true },
+    );
+
+    return { success: true, message: 'Like removed successfully' };
   }
 
   // Designed for user to comment on post
@@ -337,16 +311,15 @@ export class PostService {
     const skip = (page - 1) * pageSize;
     const limit = pageSize;
 
-    // Let's take the owner of the post
+    // Convert user's following list to ObjectId array
+    const followingIds = user.following.map((id) => new Types.ObjectId(id));
+    const userObjectId = new Types.ObjectId(userId);
 
-    // Pipeline sadece takip edilen kullanıcıların postlarını çeker
     let pipeline: PipelineStage[] = [
       {
         $match: {
-          status: PostStatus.DRAFT, // DRAFT yerine sadece yayımlanmış postları çek
-          user: {
-            $in: user.following.map((id) => new Types.ObjectId(id)),
-          },
+          status: PostStatus.DRAFT,
+          user: { $in: followingIds },
         },
       },
       {
@@ -367,10 +340,17 @@ export class PostService {
         $addFields: {
           likeCount: { $size: { $ifNull: ['$likes', []] } },
           commentCount: { $size: { $ifNull: ['$comments', []] } },
+          isLiked: {
+            $cond: {
+              if: { $in: [userObjectId, { $ifNull: ['$likes', []] }] },
+              then: true,
+              else: false,
+            },
+          },
         },
       },
       {
-        $sort: { createdAt: -1 }, // Postları en yeniye göre sırala
+        $sort: { createdAt: -1 },
       },
       {
         $skip: skip,
@@ -385,6 +365,7 @@ export class PostService {
           commentCount: 1,
           title: 1,
           media: 1,
+          isLiked: 1,
           user: {
             _id: 1,
             firstName: 1,
@@ -395,17 +376,93 @@ export class PostService {
       },
     ];
 
+    // let pipeline: PipelineStage[] = [
+    //   {
+    //     $match: {
+    //       status: PostStatus.DRAFT,
+    //       user: { $in: followingIds },
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: 'users',
+    //       localField: 'user',
+    //       foreignField: '_id',
+    //       as: 'user',
+    //     },
+    //   },
+    //   {
+    //     $unwind: {
+    //       path: '$user',
+    //       preserveNullAndEmptyArrays: true,
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: 'likes',
+    //       as: 'userLikes',
+    //       let: { postId: '$_id', userId: userObjectId },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: {
+    //               $and: [
+    //                 { $eq: ['$post', '$$postId'] },
+    //                 { $eq: ['$user', '$$userId'] },
+    //               ],
+    //             },
+    //           },
+    //         },
+    //         { $project: { _id: 1 } },
+    //       ],
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       likeCount: { $size: { $ifNull: ['$likes', []] } },
+    //       commentCount: { $size: { $ifNull: ['$comments', []] } },
+    //       isLiked: { $gt: [{ $size: '$userLikes' }, 0] },
+    //     },
+    //   },
+    //   {
+    //     $sort: { createdAt: -1 },
+    //   },
+    //   {
+    //     $skip: skip,
+    //   },
+    //   {
+    //     $limit: limit,
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 1,
+    //       likeCount: 1,
+    //       commentCount: 1,
+    //       title: 1,
+    //       media: 1,
+    //       isLiked: 1,
+    //       user: {
+    //         _id: 1,
+    //         firstName: 1,
+    //         lastName: 1,
+    //         profilePhoto: 1,
+    //       },
+    //     },
+    //   },
+    // ];
+
     const posts = await this.postModel.aggregate(pipeline);
 
     return posts;
   }
 
   // The process of pulling posts according to the user's interests
+
   async discoverPosts(
     userId: string,
     page: number = 1,
     pageSize: number = 10,
-  ): Promise<Post[]> {
+  ): Promise<{ posts: Post[]; totalCount: number }> {
     const user = await this.postUserModel
       .findById(userId)
       .populate('interests');
@@ -413,7 +470,6 @@ export class PostService {
     const skip = (page - 1) * pageSize;
     const limit = pageSize;
 
-    // Let's take the owner of the post
     let pipeline: PipelineStage[] = [
       {
         $match: {
@@ -431,7 +487,7 @@ export class PostService {
       {
         $unwind: {
           path: '$userInfo',
-          preserveNullAndEmptyArrays: true, // This preserves the document even if there is no match
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
@@ -439,44 +495,40 @@ export class PostService {
           $or: [{ userInfo: { $exists: true } }, { user: { $exists: true } }],
         },
       },
-    ];
-
-    // Let's add privacy and tracking filters
-    pipeline.push({
-      $match: {
-        $or: [
-          { tags: { $in: user.interests } },
-          {
-            'userInfo._id': {
-              $in: user.following.map((id) => new Types.ObjectId(id)),
+      {
+        $match: {
+          $or: [
+            { tags: { $in: user.interests } },
+            {
+              'userInfo._id': {
+                $in: user.following.map((id) => new Types.ObjectId(id)),
+              },
             },
-          },
-          { user: { $in: user.following.map((id) => new Types.ObjectId(id)) } },
-        ],
-        $and: [
-          {
-            $or: [
-              { 'userInfo.isPrivate': { $ne: true } },
-              { 'userInfo._id': new Types.ObjectId(user._id) },
-              {
-                'userInfo._id': {
-                  $in: user.following.map((id) => new Types.ObjectId(id)),
+            {
+              user: { $in: user.following.map((id) => new Types.ObjectId(id)) },
+            },
+          ],
+          $and: [
+            {
+              $or: [
+                { 'userInfo.isPrivate': { $ne: true } },
+                { 'userInfo._id': new Types.ObjectId(user._id) },
+                {
+                  'userInfo._id': {
+                    $in: user.following.map((id) => new Types.ObjectId(id)),
+                  },
                 },
-              },
-              { user: new Types.ObjectId(user._id) },
-              {
-                user: {
-                  $in: user.following.map((id) => new Types.ObjectId(id)),
+                { user: new Types.ObjectId(user._id) },
+                {
+                  user: {
+                    $in: user.following.map((id) => new Types.ObjectId(id)),
+                  },
                 },
-              },
-            ],
-          },
-        ],
+              ],
+            },
+          ],
+        },
       },
-    } as PipelineStage);
-
-    // Add score calculation, new fields and ranking section
-    pipeline.push(
       {
         $addFields: {
           likeCount: { $size: { $ifNull: ['$likes', []] } },
@@ -500,7 +552,7 @@ export class PostService {
             },
           },
         },
-      } as PipelineStage,
+      },
       {
         $addFields: {
           score: {
@@ -523,28 +575,40 @@ export class PostService {
             ],
           },
         },
-      } as PipelineStage,
-      {
-        $sort: { score: -1 },
-      } as PipelineStage,
-      {
-        $skip: skip,
-      } as PipelineStage,
-      {
-        $limit: limit,
-      } as PipelineStage,
-      {
-        $project: {
-          _id: 1,
-          likeCount: 1,
-          commentCount: 1,
-          firstMedia: 1,
-          score: 1,
-        },
-      } as PipelineStage,
-    );
+      },
+    ];
 
-    const posts = await this.postModel.aggregate(pipeline);
-    return posts;
+    // Use facet to get both the paginated results and the total count
+    const results = await this.postModel.aggregate<AggregationResult>([
+      ...pipeline,
+      {
+        $facet: {
+          paginatedResults: [
+            { $sort: { score: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 1,
+                likeCount: 1,
+                commentCount: 1,
+                firstMedia: 1,
+                score: 1,
+              },
+            },
+          ],
+          totalCount: [
+            {
+              $count: 'count',
+            },
+          ],
+        },
+      },
+    ]);
+
+    const posts = results[0].paginatedResults;
+    const totalCount = results[0].totalCount[0]?.count || 0;
+
+    return { posts, totalCount };
   }
 }

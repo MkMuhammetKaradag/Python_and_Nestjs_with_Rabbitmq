@@ -20,9 +20,6 @@ export class Like {
   @Field(() => Post)
   post: Types.ObjectId;
 
-  // Benzersiz indeks tanımı
-  @Prop({ unique: true, index: true, type: [Types.ObjectId, Types.ObjectId] })
-  uniqueIndex: [Types.ObjectId, Types.ObjectId];
 
   @Field()
   createdAt: Date;

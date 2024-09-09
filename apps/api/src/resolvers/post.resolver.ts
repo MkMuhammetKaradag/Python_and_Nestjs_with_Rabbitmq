@@ -10,6 +10,7 @@ import {
   CurrentUser,
   DiscoverPostsObject,
   GetPostObject,
+  GetPostsFromFollowedUsersInput,
   GetPostsFromFollowedUsersObject,
   Like,
   Post,
@@ -23,7 +24,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { GraphQLError } from 'graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { GetPostsFromFollowedUsers } from '@app/shared/types/input/GetPostsFromFollowedUsersInput';
+// import { GetPostsFromFollowedUsers } from '@app/shared/types/input/GetPostsFromFollowedUsersInput';
 
 const CREATE_COMMENT_POST = 'createCommentPost';
 @Resolver('Post')
@@ -142,7 +143,7 @@ export class PostResolver {
     }
   }
 
-  @Mutation(() => Like)
+  @Mutation(() => String)
   @UseGuards(AuthGuard)
   async addLikePost(@Args('postId') postId: string, @CurrentUser() user: any) {
     if (!user) {
@@ -150,6 +151,7 @@ export class PostResolver {
         extensions: { code: 'UNAUTHORIZED' },
       });
     }
+
     try {
       const like = await firstValueFrom<Like>(
         this.postService.send(
@@ -183,6 +185,7 @@ export class PostResolver {
         extensions: { code: 'UNAUTHORIZED' },
       });
     }
+    console.log(postId);
     try {
       const like = await firstValueFrom<RemoveLikeObject>(
         this.postService.send(
@@ -322,7 +325,7 @@ export class PostResolver {
   @Query(() => [GetPostsFromFollowedUsersObject])
   @UseGuards(AuthGuard)
   async getPostsFromFollowedUsers(
-    @Args('input') input: GetPostsFromFollowedUsers,
+    @Args('input') input: GetPostsFromFollowedUsersInput,
     @CurrentUser() user: any,
   ) {
     if (!user) {
@@ -354,10 +357,10 @@ export class PostResolver {
     }
   }
 
-  @Query(() => [DiscoverPostsObject])
+  @Query(() => DiscoverPostsObject)
   @UseGuards(AuthGuard)
   async discoverPosts(
-    @Args('input') input: GetPostsFromFollowedUsers,
+    @Args('input') input: GetPostsFromFollowedUsersInput,
     @CurrentUser() user: any,
   ) {
     if (!user) {
@@ -366,7 +369,7 @@ export class PostResolver {
       });
     }
     try {
-      const posts = await firstValueFrom(
+      const data = await firstValueFrom<{ posts: Post[]; totalCount: number }>(
         this.postService.send(
           {
             cmd: 'discover_posts',
@@ -379,7 +382,7 @@ export class PostResolver {
         ),
       );
 
-      return posts;
+      return data;
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: {

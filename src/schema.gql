@@ -28,6 +28,7 @@ enum UserRole {
 type Media {
   url: String!
   type: MediaType!
+  publicId: String!
   caption: String
 }
 
@@ -36,18 +37,6 @@ enum MediaType {
   IMAGE
   VIDEO
 }
-
-type Like {
-  _id: ID!
-  user: User!
-  post: Post!
-  createdAt: DateTime!
-}
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
 
 type Comment {
   _id: ID!
@@ -69,7 +58,7 @@ type Post {
   createdAt: String!
   updatedAt: String!
   tags: [String!]!
-  likes: [Like!]
+  likes: [User!]
   comments: [Comment!]
   score: Float!
 }
@@ -116,12 +105,17 @@ type RemoveLikeObject {
   message: String!
 }
 
-type DiscoverPostsObject {
+type DiscoverPosts {
   _id: ID!
   likeCount: Float!
   commentCount: Float!
   score: Float!
   firstMedia: Media!
+}
+
+type DiscoverPostsObject {
+  posts: [DiscoverPosts!]!
+  totalCount: Float!
 }
 
 type GetPostObject {
@@ -139,6 +133,7 @@ type GetPostsFromFollowedUsersObject {
   _id: ID!
   likeCount: Float!
   commentCount: Float!
+  isLiked: Boolean!
   title: String!
   user: User!
   media: [Media!]!
@@ -150,11 +145,11 @@ type Query {
   protectedQuery: String!
   getFollowRequests: [FollowRequest!]!
   getPost(postId: String!): GetPostObject!
-  getPostsFromFollowedUsers(input: GetPostsFromFollowedUsers!): [GetPostsFromFollowedUsersObject!]!
-  discoverPosts(input: GetPostsFromFollowedUsers!): [DiscoverPostsObject!]!
+  getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
+  discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
 }
 
-input GetPostsFromFollowedUsers {
+input GetPostsFromFollowedUsersInput {
   page: Float!
   pageSize: Float!
 }
@@ -174,7 +169,7 @@ type Mutation {
   setUserProfilePrivate(isPrivate: Boolean!): String!
   createPost(input: CreatePostInput!): Post!
   getSignedUploadUrl(input: SignUrlInput!): SignUrlOutput!
-  addLikePost(postId: String!): Like!
+  addLikePost(postId: String!): String!
   removeLikePost(postId: String!): RemoveLikeObject!
   createComment(input: CreateCommentInput!): Comment!
   updateComment(input: UpdateCommentInput!): Comment!

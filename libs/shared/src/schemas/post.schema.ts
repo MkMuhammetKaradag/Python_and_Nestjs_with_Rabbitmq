@@ -55,17 +55,13 @@ export class Post {
   @Field()
   updatedAt: string;
 
-  // @Prop({ type: [{ type: Types.ObjectId, ref: 'Tag' }] })
-  // @Field(() => [Tag], { nullable: true }) // Paylaşımın etiketleri
-  // tags: Types.ObjectId[];
-
   @Prop({ type: [String] })
   @Field(() => [String])
   tags: string[];
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'Like' }] })
-  @Field(() => [Like], { nullable: true })
-  likes: Types.ObjectId[] | Like[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  @Field(() => [User], { nullable: true })
+  likes: Types.ObjectId[];
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Comment' }] })
   @Field(() => [Comment], { nullable: true })
@@ -76,3 +72,18 @@ export class Post {
   score: number;
 }
 export const PostSchema = SchemaFactory.createForClass(Post);
+PostSchema.pre('save', function (next) {
+  // this.likes dizisini al
+  const likes = this.likes as Types.ObjectId[];
+  
+  // Benzersiz ID'leri al
+  const uniqueLikes = [...new Set(likes.map((id) => id.toString()))];
+
+  // Eğer benzersiz ID'lerin sayısı, toplam likes sayısına eşit değilse hata fırlat
+  if (uniqueLikes.length !== likes.length) {
+    return next(new Error('User IDs in the likes array must be unique.'));
+  }
+
+  // Benzersizlik sağlanmışsa kaydetme işlemini devam ettir
+  next();
+});
