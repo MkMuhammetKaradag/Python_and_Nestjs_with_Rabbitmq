@@ -18,7 +18,10 @@ export class GetPostObject {
 
   @Field()
   createdAt: string;
-  
+
+  @Field()
+  isLiked: boolean;
+
   @Field()
   likeCount: number;
 

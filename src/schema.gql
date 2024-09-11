@@ -124,6 +124,7 @@ type GetPostObject {
   tags: [String!]!
   media: [Media!]!
   createdAt: String!
+  isLiked: Boolean!
   likeCount: Float!
   commentCount: Float!
   user: User!
@@ -139,6 +140,11 @@ type GetPostsFromFollowedUsersObject {
   media: [Media!]!
 }
 
+type GetPostCommentsObject {
+  comments: [Comment!]!
+  totalCount: Float!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -147,11 +153,19 @@ type Query {
   getPost(postId: String!): GetPostObject!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
+  getPostComments(input: GetPostCommentsInput!): GetPostCommentsObject!
 }
 
 input GetPostsFromFollowedUsersInput {
   page: Float!
   pageSize: Float!
+}
+
+input GetPostCommentsInput {
+  postId: String!
+  page: Float!
+  pageSize: Float!
+  extraPassValue: Float
 }
 
 type Mutation {

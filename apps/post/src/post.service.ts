@@ -132,6 +132,18 @@ export class PostService {
           // Adding the number of likes and comments of the post as a new field
           likeCount: { $size: { $ifNull: ['$likes', []] } },
           commentCount: { $size: { $ifNull: ['$comments', []] } },
+          isLiked: {
+            $cond: {
+              if: {
+                $in: [
+                  new Types.ObjectId(currentUserId),
+                  { $ifNull: ['$likes', []] },
+                ],
+              },
+              then: true,
+              else: false,
+            },
+          },
         },
       },
       {
@@ -144,6 +156,7 @@ export class PostService {
           createdAt: 1,
           likeCount: 1,
           commentCount: 1,
+          isLiked: 1,
           'user._id': 1,
           'user.firstName': 1,
           'user.lastName': 1,
@@ -162,6 +175,32 @@ export class PostService {
     }
 
     return posts[0];
+  }
+  async getPostComments(
+    postId: string,
+    currentUserId: string,
+    page: number = 1,
+    pageSize: number = 10,
+    extraPassValue: number = 0,
+  ) {
+    const skip = (page - 1) * pageSize + extraPassValue;
+    const limit = pageSize;
+    const populatedComments = await this.postCommentModel
+      .find({ post: postId, isDeleted: false })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('user')
+      .exec();
+
+    const totalComments = await this.postCommentModel.countDocuments({
+      post: postId,
+      isDeleted: false,
+    });
+    return {
+      comments: populatedComments,
+      totalCount: totalComments,
+    };
   }
 
   // user like function
@@ -257,6 +296,12 @@ export class PostService {
       createCommentPost: {
         _id: savedComment._id,
         content: savedComment.content,
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profilePhoto: user.profilePhoto,
+        },
       },
     });
 

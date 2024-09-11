@@ -9,6 +9,8 @@ import {
   CreatePostInput,
   CurrentUser,
   DiscoverPostsObject,
+  GetPostCommentsInput,
+  GetPostCommentsObject,
   GetPostObject,
   GetPostsFromFollowedUsersInput,
   GetPostsFromFollowedUsersObject,
@@ -232,6 +234,7 @@ export class PostResolver {
           },
         ),
       );
+
       return comment;
     } catch (error) {
       throw new GraphQLError(error.message, {
@@ -382,6 +385,42 @@ export class PostResolver {
         ),
       );
 
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => GetPostCommentsObject)
+  @UseGuards(AuthGuard)
+  async getPostComments(
+    @Args('input') input: GetPostCommentsInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('You must be logged in to comment a post', {
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<{
+        comments: Comment[];
+        totalCount: number;
+      }>(
+        this.postService.send(
+          {
+            cmd: 'get_post_comments',
+          },
+          {
+            userId: user._id,
+            ...input,
+          },
+        ),
+      );
       return data;
     } catch (error) {
       throw new GraphQLError(error.message, {

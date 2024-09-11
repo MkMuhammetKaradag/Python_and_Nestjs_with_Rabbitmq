@@ -158,4 +158,28 @@ export class PostController {
       payload.pageSize,
     );
   }
+
+  @MessagePattern({
+    cmd: 'get_post_comments',
+  })
+  async postcomments(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+      postId: string;
+      page: number;
+      pageSize: number;
+      extraPassValue: number;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.postService.getPostComments(
+      payload.postId,
+      payload.userId,
+      payload.page,
+      payload.pageSize,
+      payload.extraPassValue,
+    );
+  }
 }
