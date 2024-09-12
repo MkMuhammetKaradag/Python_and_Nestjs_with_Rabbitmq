@@ -1,6 +1,12 @@
 import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
 import { Inject, UseGuards } from '@nestjs/common';
-import { AuthGuard, CurrentUser, FollowRequest } from '@app/shared';
+import {
+  AuthGuard,
+  CurrentUser,
+  FollowRequest,
+  GetUserProfileObject,
+  User,
+} from '@app/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { GraphQLError } from 'graphql';
 import { firstValueFrom } from 'rxjs';
@@ -212,7 +218,40 @@ export class UserResolver {
           },
         ),
       );
-      return  data
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => GetUserProfileObject)
+  @UseGuards(AuthGuard)
+  async getUserProfile(
+    @Args('userId') userId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.userService.send(
+          {
+            cmd: 'get_user_profile',
+          },
+          {
+            currentUserId: user._id,
+            userId,
+          },
+        ),
+      );
+      return data;
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: {

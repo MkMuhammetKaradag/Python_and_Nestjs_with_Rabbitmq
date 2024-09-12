@@ -17,11 +17,21 @@ export class UserController {
   ) {}
 
   @MessagePattern({
-    cmd: 'get_user',
+    cmd: 'get_user_profile',
   })
-  async getUser(@Ctx() context: RmqContext) {
+  async getUserProfile(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      userId: string;
+    },
+  ) {
     this.sharedService.acknowledgeMessage(context);
-    return 'users';
+    return this.userService.getUserProfile(
+      payload.currentUserId,
+      payload.userId,
+    );
   }
 
   @MessagePattern({

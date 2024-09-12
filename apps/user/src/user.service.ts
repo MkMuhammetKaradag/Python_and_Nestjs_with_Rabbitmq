@@ -328,4 +328,89 @@ export class UserService {
       });
     }
   }
+
+  async getUserProfile(currentUserId: string, userId: string) {
+    const pipeline = [
+      { $match: { _id: new Types.ObjectId(userId) } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: 'following',
+          as: 'followers',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'following',
+          foreignField: '_id',
+          as: 'following',
+        },
+      },
+      {
+        $addFields: {
+          isFollowing: {
+            $in: [new Types.ObjectId(currentUserId), '$followers._id'],
+          },
+          isCurrentUser: {
+            $eq: [new Types.ObjectId(currentUserId), '$_id'],
+          },
+          followersCount: { $size: '$followers' },
+          followingCount: { $size: '$following' },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          firstName: 1,
+          lastName: 1,
+          email: 1,
+          isPrivate: 1,
+          isFollowing: 1,
+          profilePhoto: 1,
+          roles: 1,
+          followersCount: 1,
+          followingCount: 1,
+          createdAt: 1,
+          // Diğer tüm alanları da ekleyin
+          restricted: {
+            $cond: {
+              if: {
+                $and: [
+                  { $eq: ['$isPrivate', true] },
+                  { $eq: ['$isFollowing', false] },
+                  { $eq: ['$isCurrentUser', false] },
+                ],
+              },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          firstName: 1,
+          lastName: 1,
+          email: { $cond: ['$restricted', null, '$email'] },
+          isPrivate: 1,
+          isFollowing: 1,
+          profilePhoto: { $cond: ['$restricted', null, '$profilePhoto'] },
+          createdAt: 1,
+          roles: { $cond: ['$restricted', null, '$roles'] },
+          followersCount: { $cond: ['$restricted', null, '$followersCount'] },
+          followingCount: { $cond: ['$restricted', null, '$followingCount'] },
+          // Diğer alanları da ekleyin ve gerekiyorsa restricted koşuluna göre null yapın
+          restricted: 1,
+        },
+      },
+    ];
+
+    const result = await this.userModel.aggregate(pipeline);
+
+    return result.length > 0 ? result[0] : null;
+  }
+
+  
 }

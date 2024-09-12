@@ -145,11 +145,26 @@ type GetPostCommentsObject {
   totalCount: Float!
 }
 
+type GetUserProfileObject {
+  _id: ID!
+  firstName: String!
+  lastName: String!
+  email: String
+  profilePhoto: String
+  createdAt: String
+  isPrivate: Boolean
+  followersCount: Float
+  followingCount: Float
+  isFollowing: Boolean
+  restricted: Boolean!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
   protectedQuery: String!
   getFollowRequests: [FollowRequest!]!
+  getUserProfile(userId: String!): GetUserProfileObject!
   getPost(postId: String!): GetPostObject!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
