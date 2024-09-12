@@ -1,6 +1,12 @@
 import { Controller, Inject } from '@nestjs/common';
 
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import {
+  Ctx,
+  EventPattern,
+  MessagePattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
 import { RegisterUserInput, SharedService } from '@app/shared';
 import { UserService } from './user.service';
 
@@ -89,10 +95,35 @@ export class PostUserController {
     },
   ) {
     try {
-       this.userService.changeUserProfilePrivate(payload.currentUserId, payload.isPrivate);
+      this.userService.changeUserProfilePrivate(
+        payload.currentUserId,
+        payload.isPrivate,
+      );
       this.sharedService.acknowledgeMessage(context);
     } catch (error) {
       this.sharedService.nacknowledgeMessage(context);
     }
+  }
+
+  @MessagePattern({
+    cmd: 'get_user_posts',
+  })
+  async getUserPosts(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      userId: string;
+      page: number;
+      pageSize: number;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.userService.getUserPosts(
+      payload.currentUserId,
+      payload.userId,
+      payload.page,
+      payload.pageSize,
+    );
   }
 }

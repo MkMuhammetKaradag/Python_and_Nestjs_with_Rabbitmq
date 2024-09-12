@@ -14,6 +14,7 @@ import {
   GetPostObject,
   GetPostsFromFollowedUsersInput,
   GetPostsFromFollowedUsersObject,
+  GetUserPostsInput,
   Like,
   Post,
   PUB_SUB,
@@ -417,6 +418,39 @@ export class PostResolver {
           },
           {
             userId: user._id,
+            ...input,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => DiscoverPostsObject)
+  @UseGuards(AuthGuard)
+  async getUserPosts(
+    @Args('input') input: GetUserPostsInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.postService.send(
+          {
+            cmd: 'get_user_posts',
+          },
+          {
+            currentUserId: user._id,
             ...input,
           },
         ),

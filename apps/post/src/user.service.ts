@@ -1,16 +1,29 @@
-import { CurrentUser, User, UserDocument, UserRole } from '@app/shared';
+import {
+  CurrentUser,
+  Post,
+  PostDocument,
+  PostStatus,
+  User,
+  UserDocument,
+  UserRole,
+} from '@app/shared';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 
 import { InjectModel } from '@nestjs/mongoose';
 
-import { Model, Types } from 'mongoose';
-
+import { Model, PipelineStage, Types } from 'mongoose';
+interface AggregationResult {
+  paginatedResults: Post[];
+  totalCount: { count: number }[];
+}
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name, 'post')
     private postUserModel: Model<UserDocument>,
+    @InjectModel(Post.name, 'post')
+    private postModel: Model<PostDocument>,
   ) {}
   // A function created to ensure data consistency in the post service when a new user registers in the auth service.
   async createUser({
@@ -128,18 +141,128 @@ export class UserService {
     });
   }
 
-
   async changeUserProfilePrivate(currentUserId: string, isPrivate: boolean) {
     try {
-      const user = await this.postUserModel.findById(currentUserId)
+      const user = await this.postUserModel.findById(currentUserId);
       user.isPrivate = isPrivate;
       await user.save();
-
     } catch (error) {
       throw new RpcException({
         message: error.message,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
+  }
+
+  async getUserPosts(
+    currentUserId: string,
+    userId: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ) {
+    const user = await this.postUserModel.findById(currentUserId);
+
+    const skip = (page - 1) * pageSize;
+    const limit = pageSize;
+
+    let pipeline: PipelineStage[] = [
+      {
+        $match: {
+          status: PostStatus.DRAFT,
+          user: new Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      {
+        $unwind: {
+          path: '$userInfo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          $or: [{ userInfo: { $exists: true } }, { user: { $exists: true } }],
+        },
+      },
+      {
+        $match: {
+          $or: [
+            {
+              'userInfo._id': {
+                $in: user.following.map((id) => new Types.ObjectId(id)),
+              },
+            },
+            {
+              user: { $in: user.following.map((id) => new Types.ObjectId(id)) },
+            },
+          ],
+          $and: [
+            {
+              $or: [
+                { 'userInfo.isPrivate': { $ne: true } },
+                { 'userInfo._id': new Types.ObjectId(user._id) },
+                {
+                  'userInfo._id': {
+                    $in: user.following.map((id) => new Types.ObjectId(id)),
+                  },
+                },
+                { user: new Types.ObjectId(user._id) },
+                {
+                  user: {
+                    $in: user.following.map((id) => new Types.ObjectId(id)),
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          likeCount: { $size: { $ifNull: ['$likes', []] } },
+          commentCount: { $size: { $ifNull: ['$comments', []] } },
+          firstMedia: { $arrayElemAt: ['$media', 0] },
+        },
+      },
+    ];
+
+    // Use facet to get both the paginated results and the total count
+    const results = await this.postModel.aggregate<AggregationResult>([
+      ...pipeline,
+      {
+        $facet: {
+          paginatedResults: [
+            { $sort: { score: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 1,
+                likeCount: 1,
+                commentCount: 1,
+                firstMedia: 1,
+              },
+            },
+          ],
+          totalCount: [
+            {
+              $count: 'count',
+            },
+          ],
+        },
+      },
+    ]);
+
+    const posts = results[0].paginatedResults;
+    const totalCount = results[0].totalCount[0]?.count || 0;
+
+    return { posts, totalCount };
   }
 }

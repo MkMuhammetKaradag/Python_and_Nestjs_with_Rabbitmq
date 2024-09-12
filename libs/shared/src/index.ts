@@ -33,6 +33,7 @@ export * from './types/input/CreateMediaInput';
 export * from './types/input/ForgotPasswordInput';
 export * from './types/input/ResetPasswordInput';
 export * from './types/input/GetPostsFromFollowedUsersInput';
+export * from "./types/input/GetUserPostsInput"
 export * from './types/input/GetPostCommentsInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';

@@ -179,6 +179,7 @@ type Query {
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
   getPostComments(input: GetPostCommentsInput!): GetPostCommentsObject!
+  getUserPosts(input: GetUserPostsInput!): DiscoverPostsObject!
 }
 
 input GetPostsFromFollowedUsersInput {
@@ -191,6 +192,12 @@ input GetPostCommentsInput {
   page: Float!
   pageSize: Float!
   extraPassValue: Float
+}
+
+input GetUserPostsInput {
+  userId: String!
+  page: Float!
+  pageSize: Float!
 }
 
 type Mutation {
