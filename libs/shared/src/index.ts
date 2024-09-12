@@ -44,6 +44,7 @@ export * from './types/object/GetPostObject';
 export * from './types/object/GetPostsFromFollowedUsersObject';
 export * from './types/object/GetPostCommentsObject';
 export * from './types/object/GetUserProfileObject';
+export * from "./types/object/GetUserFollowingObject"
 
 //Guards
 export * from './guards/auth.guard';

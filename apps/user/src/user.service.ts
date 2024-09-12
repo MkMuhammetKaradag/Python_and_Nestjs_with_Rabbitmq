@@ -411,6 +411,125 @@ export class UserService {
 
     return result.length > 0 ? result[0] : null;
   }
+  async getUserFollowing(currentUserId: string, userId: string) {
+    const pipeline = [
+      {
+        $match: { _id: new Types.ObjectId(userId) },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { followingIds: '$following' },
+          pipeline: [
+            { $match: { $expr: { $in: ['$_id', '$$followingIds'] } } },
+            {
+              $project: {
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+                profilePhoto: 1,
+                followers: 1,
+              },
+            }, // Sadece gerekli alanlar
+          ],
+          as: 'following',
+        },
+      },
+      {
+        $addFields: {
+          following: {
+            $map: {
+              input: '$following',
+              as: 'followedUser',
+              in: {
+                _id: '$$followedUser._id',
+                firstName: '$$followedUser.firstName',
+                lastName: '$$followedUser.lastName',
+                profilePhoto: '$$followedUser.profilePhoto',
+                isFollowing: {
+                  $in: [
+                    new Types.ObjectId(currentUserId),
+                    '$$followedUser.followers',
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          'following._id': 1,
+          'following.lastName': 1,
+          'following.firstName': 1,
+          'following.profilePhoto': 1,
+          'following.isFollowing': 1,
+        },
+      },
+    ];
+    const result = await this.userModel.aggregate(pipeline);
+    return result.length > 0 ? result[0].following : null;
+  }
 
-  
+  async getUserFollowers(currentUserId: string, userId: string) {
+    const pipeline = [
+      {
+        $match: { _id: new Types.ObjectId(userId) }, // Belirli kullanıcıyı bul
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { followerIds: '$followers' }, // 'followers' dizisi ile eşleştir
+          pipeline: [
+            { $match: { $expr: { $in: ['$_id', '$$followerIds'] } } },
+            {
+              $project: {
+                _id: 1,
+                firstName: 1,
+                lastName: 1,
+                profilePhoto: 1,
+                following: 1, // Bu kullanıcının kimleri takip ettiğini de projekte et
+              },
+            }, // Sadece gerekli alanlar
+          ],
+          as: 'followers', // 'followers' verisi burada toplanacak
+        },
+      },
+      {
+        $addFields: {
+          followers: {
+            $map: {
+              input: '$followers',
+              as: 'followerUser',
+              in: {
+                _id: '$$followerUser._id',
+                firstName: '$$followerUser.firstName',
+                lastName: '$$followerUser.lastName',
+                profilePhoto: '$$followerUser.profilePhoto',
+                isFollowing: {
+                  $in: [
+                    new Types.ObjectId(currentUserId),
+                    '$$followerUser.following', // Şu anki kullanıcının takip ettiklerine bakılıyor
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          'followers._id': 1,
+          'followers.firstName': 1,
+          'followers.lastName': 1,
+          'followers.profilePhoto': 1,
+          'followers.isFollowing': 1,
+        },
+      },
+    ];
+    const result = await this.userModel.aggregate(pipeline);
+    return result.length > 0 ? result[0].followers : null;
+  }
 }

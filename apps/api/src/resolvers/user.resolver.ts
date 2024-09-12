@@ -4,6 +4,7 @@ import {
   AuthGuard,
   CurrentUser,
   FollowRequest,
+  GetUserFollowingObject,
   GetUserProfileObject,
   User,
 } from '@app/shared';
@@ -244,6 +245,72 @@ export class UserResolver {
         this.userService.send(
           {
             cmd: 'get_user_profile',
+          },
+          {
+            currentUserId: user._id,
+            userId,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => [GetUserFollowingObject])
+  @UseGuards(AuthGuard)
+  async getUserFollowing(
+    @Args('userId') userId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.userService.send(
+          {
+            cmd: 'get_user_following',
+          },
+          {
+            currentUserId: user._id,
+            userId,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => [GetUserFollowingObject])
+  @UseGuards(AuthGuard)
+  async getUserFollowers(
+    @Args('userId') userId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.userService.send(
+          {
+            cmd: 'get_user_followers',
           },
           {
             currentUserId: user._id,

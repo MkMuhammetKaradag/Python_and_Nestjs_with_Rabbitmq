@@ -135,4 +135,40 @@ export class UserController {
       payload.isPrivate,
     );
   }
+
+  @MessagePattern({
+    cmd: 'get_user_following',
+  })
+  async getUserFollowing(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      userId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.getUserFollowing(
+      payload.currentUserId,
+      payload.userId,
+    );
+  }
+
+  @MessagePattern({
+    cmd: 'get_user_followers',
+  })
+  async getUserFollowers(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      userId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.getUserFollowers(
+      payload.currentUserId,
+      payload.userId,
+    );
+  }
 }

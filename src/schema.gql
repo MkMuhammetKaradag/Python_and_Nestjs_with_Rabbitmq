@@ -159,12 +159,22 @@ type GetUserProfileObject {
   restricted: Boolean!
 }
 
+type GetUserFollowingObject {
+  _id: ID!
+  firstName: String!
+  lastName: String!
+  profilePhoto: String
+  isFollowing: Boolean
+}
+
 type Query {
   getQuery: String!
   getMe: User!
   protectedQuery: String!
   getFollowRequests: [FollowRequest!]!
   getUserProfile(userId: String!): GetUserProfileObject!
+  getUserFollowing(userId: String!): [GetUserFollowingObject!]!
+  getUserFollowers(userId: String!): [GetUserFollowingObject!]!
   getPost(postId: String!): GetPostObject!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
