@@ -181,6 +181,7 @@ type GetUserProfileObject {
   followersCount: Float
   followingCount: Float
   isFollowing: Boolean
+  chatId: String
   restricted: Boolean!
 }
 

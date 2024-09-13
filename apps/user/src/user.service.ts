@@ -353,6 +353,27 @@ export class UserService {
         },
       },
       {
+        $lookup: {
+          from: 'chats',
+          let: { userId: { $toString: '$_id' } },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [{ $size: '$participants' }, 2] },
+                    { $in: [currentUserId, '$participants'] },
+                    { $in: ['$$userId', '$participants'] },
+                  ],
+                },
+              },
+            },
+            { $project: { _id: 1, participants: 1 } },
+          ],
+          as: 'oneOnOneChat',
+        },
+      },
+      {
         $addFields: {
           isFollowing: {
             $in: [new Types.ObjectId(currentUserId), '$followers._id'],
@@ -362,6 +383,7 @@ export class UserService {
           },
           followersCount: { $size: '$followers' },
           followingCount: { $size: '$following' },
+          chatId: { $arrayElemAt: ['$oneOnOneChat._id', 0] },
         },
       },
       {
@@ -377,6 +399,8 @@ export class UserService {
           followersCount: 1,
           followingCount: 1,
           createdAt: 1,
+          chatId: 1,
+
           // Diğer tüm alanları da ekleyin
           restricted: {
             $cond: {
@@ -405,6 +429,8 @@ export class UserService {
           roles: { $cond: ['$restricted', null, '$roles'] },
           followersCount: { $cond: ['$restricted', null, '$followersCount'] },
           followingCount: { $cond: ['$restricted', null, '$followingCount'] },
+          chatId: 1,
+
           // Diğer alanları da ekleyin ve gerekiyorsa restricted koşuluna göre null yapın
           restricted: 1,
         },
