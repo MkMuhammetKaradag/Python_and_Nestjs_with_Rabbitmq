@@ -29,4 +29,24 @@ export class ChatController {
     this.sharedService.acknowledgeMessage(context);
     return await this.chatService.createChat(payload.participantIds);
   }
+
+  @MessagePattern({
+    cmd: 'add_message_to_chat',
+  })
+  async addMessageToChat(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      chatId: string;
+      senderId: string;
+      content: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.chatService.addMessageToChat(
+      payload.chatId,
+      payload.senderId,
+      payload.content,
+    );
+  }
 }

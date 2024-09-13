@@ -38,6 +38,7 @@ export * from './types/input/GetPostsFromFollowedUsersInput';
 export * from './types/input/GetUserPostsInput';
 export * from './types/input/GetPostCommentsInput';
 export * from './types/input/GetSearchForUserInput';
+export * from './types/input/AddMessageToChatInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';

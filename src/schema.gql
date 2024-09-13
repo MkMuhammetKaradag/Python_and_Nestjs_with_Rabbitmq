@@ -265,6 +265,7 @@ type Mutation {
   updateComment(input: UpdateCommentInput!): Comment!
   checkHumanInMedia(input: CreatePostInput!): String!
   createChat(participantIds: [String!]!): Chat!
+  addMessageToChat(input: AddMessageToChatInput!): Message!
 }
 
 input CreateUserInput {
@@ -329,6 +330,12 @@ input UpdateCommentInput {
   isDeleted: Boolean
 }
 
+input AddMessageToChatInput {
+  chatId: String!
+  content: String!
+}
+
 type Subscription {
   createCommentPost(postId: String!): Comment!
+  createMessageToChat(chatId: String!): Message!
 }

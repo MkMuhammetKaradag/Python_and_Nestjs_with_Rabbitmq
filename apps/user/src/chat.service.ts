@@ -3,21 +3,25 @@ import {
   ChatDocument,
   Message,
   MessageDocument,
+  PUB_SUB,
   User,
   UserDocument,
 } from '@app/shared';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-
+import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { Model, Types } from 'mongoose';
+const CREATE_MESSAGE = 'createMessageToChat';
 @Injectable()
 export class ChatService {
   constructor(
     @InjectModel(User.name, 'user') private userModel: Model<UserDocument>,
     @InjectModel(Chat.name, 'user') private chatModel: Model<ChatDocument>,
     @InjectModel(Message.name, 'user')
-    private messsageModel: Model<MessageDocument>,
+    private messageModel: Model<MessageDocument>,
+
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
 
   async createChat(participantIds: string[]): Promise<Chat> {
@@ -39,7 +43,6 @@ export class ChatService {
       }
     }
 
-    
     const newChat = new this.chatModel({
       participants: participantIds,
       messages: [],
@@ -47,7 +50,6 @@ export class ChatService {
     });
     await newChat.save();
 
-   
     await this.userModel.updateMany(
       { _id: { $in: participantIds } },
       { $push: { chats: newChat._id } },
@@ -57,12 +59,65 @@ export class ChatService {
   }
 
   async getChatById(chatId: string): Promise<Chat> {
-    return this.chatModel.findById(chatId)
+    return this.chatModel
+      .findById(chatId)
       .populate('participants')
       .populate({
         path: 'messages',
-        populate: { path: 'sender' }
+        populate: { path: 'sender' },
       })
       .exec();
+  }
+
+  async addMessageToChat(
+    chatId: string,
+    senderId: string,
+    content: string,
+  ): Promise<Message> {
+    const chat = await this.chatModel.findById(chatId);
+    const user = await this.userModel.findById(senderId);
+    if (!chat || !user) {
+      throw new RpcException({
+        message: 'Chat or user  is not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    if (!chat.participants.includes(new Types.ObjectId(senderId))) {
+      throw new RpcException({
+        message: 'User is not a participant of this chat',
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+
+    const newMessage = new this.messageModel({
+      sender: senderId,
+      chat: chatId,
+      content: content,
+    });
+    await newMessage.save();
+
+    // Chat'e mesajı ekle
+    await this.chatModel.findByIdAndUpdate(chatId, {
+      $push: { messages: newMessage._id },
+    });
+
+    // Kullanıcının mesajlar listesini güncelle
+    // await this.userModel.findByIdAndUpdate(senderId, {
+    //   $push: { messages: newMessage._id },
+    // });
+    this.pubSub.publish(CREATE_MESSAGE, {
+      createMessageToChat: {
+        _id: newMessage._id,
+        content: newMessage.content,
+        chatId: chat._id,
+        sender: {
+          _id: user._id,
+          userName: user.userName,
+          profilePhoto: user.profilePhoto,
+        },
+      },
+    });
+    return newMessage;
   }
 }

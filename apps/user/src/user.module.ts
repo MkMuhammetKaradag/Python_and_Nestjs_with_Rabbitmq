@@ -10,6 +10,7 @@ import {
   Message,
   MessageSchema,
   MongoDBModule,
+  PubSubModule,
   SharedModule,
   SharedService,
   User,
@@ -25,6 +26,7 @@ import { ChatService } from './chat.service';
       isGlobal: true,
     }),
     SharedModule,
+    PubSubModule,
     SharedModule.registerRmq('POST_SERVICE', 'POST'),
     MongoDBModule.forRoot('USER', 'user'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
