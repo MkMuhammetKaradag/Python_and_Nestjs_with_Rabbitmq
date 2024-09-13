@@ -6,6 +6,7 @@ type User {
   _id: ID!
   firstName: String!
   lastName: String!
+  userName: String!
   email: String!
   profilePhoto: String
   roles: [UserRole!]!
@@ -167,6 +168,18 @@ type GetUserFollowingObject {
   isFollowing: Boolean
 }
 
+type SearchUser {
+  _id: ID!
+  profilePhoto: String
+  followingCount: Float!
+  userName: String!
+}
+
+type GetSearchForUserObject {
+  users: [SearchUser!]!
+  totalCount: Float!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -175,11 +188,18 @@ type Query {
   getUserProfile(userId: String!): GetUserProfileObject!
   getUserFollowing(userId: String!): [GetUserFollowingObject!]!
   getUserFollowers(userId: String!): [GetUserFollowingObject!]!
+  getSearchForUser(input: GetSearchForUserInput!): GetSearchForUserObject!
   getPost(postId: String!): GetPostObject!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
   getPostComments(input: GetPostCommentsInput!): GetPostCommentsObject!
   getUserPosts(input: GetUserPostsInput!): DiscoverPostsObject!
+}
+
+input GetSearchForUserInput {
+  searchText: String!
+  page: Float!
+  pageSize: Float!
 }
 
 input GetPostsFromFollowedUsersInput {
@@ -239,6 +259,7 @@ input RegisterUserInput {
   firstName: String!
   lastName: String!
   email: String!
+  userName: String!
   password: String!
   roles: [UserRole!]! = [USER]
 }

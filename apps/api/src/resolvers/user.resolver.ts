@@ -4,6 +4,8 @@ import {
   AuthGuard,
   CurrentUser,
   FollowRequest,
+  GetSearchForUserInput,
+  GetSearchForUserObject,
   GetUserFollowingObject,
   GetUserProfileObject,
   User,
@@ -315,6 +317,38 @@ export class UserResolver {
           {
             currentUserId: user._id,
             userId,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() =>GetSearchForUserObject)
+  @UseGuards(AuthGuard)
+  async getSearchForUser(
+    @Args('input') input: GetSearchForUserInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.userService.send(
+          {
+            cmd: 'search_for_user',
+          },
+          {
+            ...input,
           },
         ),
       );

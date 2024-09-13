@@ -33,6 +33,7 @@ export class UserService {
     email,
     roles,
     password,
+    userName,
   }: {
     id: string;
     firstName: string;
@@ -40,6 +41,7 @@ export class UserService {
     email: string;
     roles: UserRole[];
     password: string;
+    userName: string;
   }) {
     // create user
     const user = new this.postUserModel({
@@ -48,6 +50,7 @@ export class UserService {
       lastName,
       email,
       roles,
+      userName,
       password: 'temporary',
     });
     await user.save();
@@ -265,4 +268,6 @@ export class UserService {
 
     return { posts, totalCount };
   }
+
+
 }

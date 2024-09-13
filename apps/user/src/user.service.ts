@@ -16,8 +16,12 @@ import {
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { GraphQLError } from 'graphql';
+import { PipelineStage } from 'mongoose';
 import { Model, Types } from 'mongoose';
-
+interface AggregationResult {
+  paginatedResults: User[];
+  totalCount: { count: number }[];
+}
 @Injectable()
 export class UserService {
   constructor(
@@ -531,5 +535,67 @@ export class UserService {
     ];
     const result = await this.userModel.aggregate(pipeline);
     return result.length > 0 ? result[0].followers : null;
+  }
+
+  async searchForUser(
+    searchText: string,
+    page: number = 1,
+    pageSize: number = 10,
+  ) {
+    if (searchText.length < 3) {
+      throw new RpcException({
+        message: 'search text cannot be less than 3 characters',
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+
+    const skip = (page - 1) * pageSize;
+    const limit = pageSize;
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          $or: [
+            { userName: { $regex: searchText, $options: 'i' } },
+            { email: { $regex: searchText, $options: 'i' } },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          followingCount: { $size: '$following' },
+        },
+      },
+    ];
+    const results = await this.userModel.aggregate<AggregationResult>([
+      ...pipeline,
+      {
+        $facet: {
+          paginatedResults: [
+            { $sort: { followingCount: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                firstName: 1,
+                lastName: 1,
+                userName: 1,
+                followingCount: 1,
+                profilePhoto: 1,
+              },
+            },
+          ],
+          totalCount: [
+            {
+              $count: 'count',
+            },
+          ],
+        },
+      },
+    ]);
+    const users = results[0].paginatedResults;
+    const totalCount = results[0].totalCount[0]?.count || 0;
+
+    return { users, totalCount };
   }
 }

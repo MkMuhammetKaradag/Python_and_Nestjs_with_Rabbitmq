@@ -171,4 +171,24 @@ export class UserController {
       payload.userId,
     );
   }
+
+  @MessagePattern({
+    cmd: 'search_for_user',
+  })
+  async getSearchForUser(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      searchText: string;
+      page: number;
+      pageSize: number;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.searchForUser(
+      payload.searchText,
+      payload.page,
+      payload.pageSize,
+    );
+  }
 }

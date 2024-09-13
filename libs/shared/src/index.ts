@@ -33,8 +33,9 @@ export * from './types/input/CreateMediaInput';
 export * from './types/input/ForgotPasswordInput';
 export * from './types/input/ResetPasswordInput';
 export * from './types/input/GetPostsFromFollowedUsersInput';
-export * from "./types/input/GetUserPostsInput"
+export * from './types/input/GetUserPostsInput';
 export * from './types/input/GetPostCommentsInput';
+export * from './types/input/GetSearchForUserInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';
@@ -45,7 +46,8 @@ export * from './types/object/GetPostObject';
 export * from './types/object/GetPostsFromFollowedUsersObject';
 export * from './types/object/GetPostCommentsObject';
 export * from './types/object/GetUserProfileObject';
-export * from "./types/object/GetUserFollowingObject"
+export * from './types/object/GetUserFollowingObject';
+export * from './types/object/GetSearchForUserObject';
 
 //Guards
 export * from './guards/auth.guard';

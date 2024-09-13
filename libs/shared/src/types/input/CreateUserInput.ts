@@ -10,6 +10,9 @@ export class CreateUserInput {
   lastName: string;
 
   @Field()
+  userName: string;
+
+  @Field()
   email: string;
 
   @Field()

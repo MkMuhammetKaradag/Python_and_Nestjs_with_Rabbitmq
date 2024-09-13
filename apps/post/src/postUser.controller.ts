@@ -32,7 +32,7 @@ export class PostUserController {
     // Actions to be taken when the User created event occurs
     const {
       userId,
-      user: { firstName, lastName, email, roles, password },
+      user: { firstName, lastName, email, roles, password, userName },
     } = createUser;
 
     // Transactions related to this user within the mail service
@@ -44,6 +44,7 @@ export class PostUserController {
         email,
         roles,
         password,
+        userName,
       });
       this.sharedService.acknowledgeMessage(context);
     } catch (error) {
