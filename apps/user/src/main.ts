@@ -10,6 +10,7 @@ async function bootstrap() {
   const port = configService.get('USER_PORT');
   const queue = configService.get<string>('RABBITMQ_USER_QUEUE');
   app.connectMicroservice(sharedService.getRmqOptions('USER'));
+  app.connectMicroservice(sharedService.getRmqOptions('CHAT'));
 
   app.startAllMicroservices();
   await app.listen(port);

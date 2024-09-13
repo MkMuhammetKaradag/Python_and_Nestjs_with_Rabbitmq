@@ -13,6 +13,7 @@ import { AuthResolver } from './resolvers/auth.resolver';
 import { UserResolver } from './resolvers/user.resolver';
 import { PostResolver } from './resolvers/post.resolver';
 import { parseCookies } from './utils';
+import { ChatResolver } from './resolvers/chat.resolver';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +27,7 @@ import { parseCookies } from './utils';
     SharedModule.registerRmq('MATH_SERVICE', 'MATH'),
     SharedModule.registerRmq('IMAGE_SERVICE', 'IMAGE'),
     SharedModule.registerRmq('PRODUCT_SERVICE', 'PRODUCT'),
+    SharedModule.registerRmq('CHAT_SERVICE', 'CHAT'),
     GraphQLModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -68,6 +70,12 @@ import { parseCookies } from './utils';
     }),
   ],
   controllers: [ApiController, AuthController, MathController],
-  providers: [ApiService, AuthResolver, UserResolver, PostResolver],
+  providers: [
+    ApiService,
+    AuthResolver,
+    UserResolver,
+    PostResolver,
+    ChatResolver,
+  ],
 })
 export class ApiModule {}

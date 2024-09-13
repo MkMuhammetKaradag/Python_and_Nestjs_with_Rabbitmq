@@ -19,6 +19,8 @@ export * from './schemas/tag.schema';
 export * from './schemas/like.schema';
 export * from './schemas/comment.schema';
 export * from './schemas/followRequest.schema';
+export * from './schemas/chat.schema';
+export * from './schemas/message.schema';
 
 //InputTypes
 export * from './types/input/CreateUserInput';

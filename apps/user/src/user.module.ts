@@ -3,8 +3,12 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ConfigModule } from '@nestjs/config';
 import {
+  Chat,
+  ChatSchema,
   FollowRequest,
   FollowRequestSchema,
+  Message,
+  MessageSchema,
   MongoDBModule,
   SharedModule,
   SharedService,
@@ -12,6 +16,8 @@ import {
   UserSchema,
 } from '@app/shared';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ChatController } from './chat.controller';
+import { ChatService } from './chat.service';
 
 @Module({
   imports: [
@@ -25,13 +31,16 @@ import { MongooseModule } from '@nestjs/mongoose';
       [
         { name: User.name, schema: UserSchema },
         { name: FollowRequest.name, schema: FollowRequestSchema },
+        { name: Chat.name, schema: ChatSchema },
+        { name: Message.name, schema: MessageSchema },
       ],
       'user', // Associate with userConnection
     ),
   ],
-  controllers: [UserController],
+  controllers: [UserController, ChatController],
   providers: [
     UserService,
+    ChatService,
     {
       provide: 'SharedServiceInterface',
       useClass: SharedService,

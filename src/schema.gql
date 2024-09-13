@@ -2,6 +2,29 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Message {
+  _id: ID!
+  sender: User!
+  chat: Chat!
+  content: String!
+  isRead: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Chat {
+  _id: ID!
+  participants: [User!]!
+  messages: [Message!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type User {
   _id: ID!
   firstName: String!
@@ -18,6 +41,7 @@ type User {
   following: [User!]
   followers: [User!]
   isPrivate: Boolean!
+  chats: [Chat!]
 }
 
 """User roles"""
@@ -240,6 +264,7 @@ type Mutation {
   createComment(input: CreateCommentInput!): Comment!
   updateComment(input: UpdateCommentInput!): Comment!
   checkHumanInMedia(input: CreatePostInput!): String!
+  createChat(participantIds: [String!]!): Chat!
 }
 
 input CreateUserInput {

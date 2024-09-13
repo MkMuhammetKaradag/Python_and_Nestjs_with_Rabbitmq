@@ -8,6 +8,7 @@ import {
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Interest } from './interest.schema';
+import { Chat } from './chat.schema';
 
 export type UserDocument = User & Document;
 export enum UserRole {
@@ -78,15 +79,10 @@ export class User {
   @Field() // GraphQL alanı olarak işaretleme
   updatedAt: string;
 
-  // @Prop({ type: [{ type: Types.ObjectId, ref: 'Interest' }] })
-  // @Field(() => [Interest], { nullable: true }) // Kullanıcının ilgi alanları
-  // interests: Types.ObjectId[];
-
   @Prop({ type: [String] })
   @Field(() => [String])
   interests: string[];
 
-  // Yeni eklenen alanlar
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
   @Field(() => [User], { nullable: true })
   following: Types.ObjectId[];
@@ -98,6 +94,10 @@ export class User {
   @Prop({ default: false })
   @Field(() => Boolean)
   isPrivate: boolean;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Chat' }] })
+  @Field(() => [Chat], { nullable: true })
+  chats: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
