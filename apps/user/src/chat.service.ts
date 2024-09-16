@@ -146,6 +146,40 @@ export class ChatService {
     return newMessage;
   }
 
+  async getChatMessages(
+    chatId: string,
+    page: number = 1,
+    pageSize: number = 10,
+    extraPassValue: number = 0,
+  ) {
+    const skip = (page - 1) * pageSize + extraPassValue;
+    console.log(chatId);
+    const chatMessages = await this.messageModel
+      .find({
+        chat: new Types.ObjectId(chatId),
+      })
+      .populate({
+        path: 'sender',
+        select: 'userName profilePhoto _id',
+        model: 'User',
+      })
+      .sort({ createdAt: -1 }) // En yeni mesajları önce getirir
+      .skip(skip)
+      .limit(pageSize);
+
+    const totalMessages = await this.messageModel.countDocuments({
+      chat: new Types.ObjectId(chatId),
+    });
+
+    const pagination = {
+      messages: chatMessages,
+      currentPage: page,
+      totalPages: Math.ceil(totalMessages / pageSize),
+      totalMessages,
+    };
+
+    return pagination;
+  }
   async getChats(currentUserId: string) {
     const chats = await this.chatModel
       .aggregate([
@@ -193,10 +227,23 @@ export class ChatService {
         },
         {
           $project: {
+            participants: {
+              $filter: {
+                input: '$participants',
+                as: 'participant',
+                cond: {
+                  $ne: ['$$participant._id', new Types.ObjectId(currentUserId)],
+                },
+              },
+            },
+            lastMessage: { $arrayElemAt: ['$lastMessage', 0] },
+          },
+        },
+        {
+          $project: {
             'participants.userName': 1,
             'participants.profilePhoto': 1,
-            // messages: 1,
-            lastMessage: { $arrayElemAt: ['$lastMessage', 0] },
+            lastMessage: 1,
           },
         },
       ])

@@ -211,6 +211,13 @@ type GetUserChats {
   lastMessage: Message
 }
 
+type GetChatMessagesObject {
+  messages: [Message!]!
+  totalMessages: Float!
+  totalPages: Float!
+  currentPage: Float!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -225,7 +232,8 @@ type Query {
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
   getPostComments(input: GetPostCommentsInput!): GetPostCommentsObject!
   getUserPosts(input: GetUserPostsInput!): DiscoverPostsObject!
-  getChtats: [GetUserChats!]!
+  getChats: [GetUserChats!]!
+  getChatMessage(input: GetChatMessagesInput!): GetChatMessagesObject!
 }
 
 input GetSearchForUserInput {
@@ -250,6 +258,13 @@ input GetUserPostsInput {
   userId: String!
   page: Float!
   pageSize: Float!
+}
+
+input GetChatMessagesInput {
+  chatId: String!
+  page: Float!
+  pageSize: Float!
+  extraPassValue: Float
 }
 
 type Mutation {

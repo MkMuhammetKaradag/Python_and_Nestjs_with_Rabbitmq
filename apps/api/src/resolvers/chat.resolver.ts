@@ -3,10 +3,12 @@ import {
   AuthGuard,
   Chat,
   CurrentUser,
+  GetChatMessagesObject,
   GetUserChats,
   Message,
   PUB_SUB,
 } from '@app/shared';
+import { GetChatMessagesInput } from '@app/shared/types/input/GetChatMessagesInput';
 import { BadRequestException, Inject, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { ClientProxy } from '@nestjs/microservices';
@@ -103,7 +105,7 @@ export class ChatResolver {
 
   @Query(() => [GetUserChats])
   @UseGuards(AuthGuard)
-  async getChtats(@CurrentUser() user: any) {
+  async getChats(@CurrentUser() user: any) {
     if (!user) {
       throw new GraphQLError('User not found', {
         extensions: { code: 'USER_NOT_FOUND' },
@@ -121,6 +123,38 @@ export class ChatResolver {
         ),
       );
       return chats;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => GetChatMessagesObject)
+  @UseGuards(AuthGuard)
+  async getChatMessage(
+    @Args('input') input: GetChatMessagesInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.chatService.send(
+          {
+            cmd: 'get_chat_messages',
+          },
+          {
+            ...input,
+          },
+        ),
+      );
+      return data;
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: {

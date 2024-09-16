@@ -63,4 +63,26 @@ export class ChatController {
     this.sharedService.acknowledgeMessage(context);
     return await this.chatService.getChats(payload.currentUserId);
   }
+
+  @MessagePattern({
+    cmd: 'get_chat_messages',
+  })
+  async getChatMessages(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      chatId: string;
+      page: number;
+      pageSize: number;
+      extraPassValue: number;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.chatService.getChatMessages(
+      payload.chatId,
+      payload.page,
+      payload.pageSize,
+      payload.extraPassValue,
+    );
+  }
 }
