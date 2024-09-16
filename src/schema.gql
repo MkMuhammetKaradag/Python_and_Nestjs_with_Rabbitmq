@@ -8,14 +8,9 @@ type Message {
   chat: Chat!
   content: String!
   isRead: Boolean!
-  createdAt: DateTime!
-  updatedAt: DateTime!
+  createdAt: String!
+  updatedAt: String!
 }
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
 
 type Chat {
   _id: ID!
@@ -24,6 +19,11 @@ type Chat {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
 
 type User {
   _id: ID!
@@ -205,6 +205,12 @@ type GetSearchForUserObject {
   totalCount: Float!
 }
 
+type GetUserChats {
+  _id: ID!
+  participants: [User!]!
+  lastMessage: Message
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -219,6 +225,7 @@ type Query {
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
   getPostComments(input: GetPostCommentsInput!): GetPostCommentsObject!
   getUserPosts(input: GetUserPostsInput!): DiscoverPostsObject!
+  getChtats: [GetUserChats!]!
 }
 
 input GetSearchForUserInput {

@@ -49,4 +49,18 @@ export class ChatController {
       payload.content,
     );
   }
+
+  @MessagePattern({
+    cmd: 'get_chats',
+  })
+  async getChats(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.chatService.getChats(payload.currentUserId);
+  }
 }

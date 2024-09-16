@@ -51,6 +51,7 @@ export * from './types/object/GetPostCommentsObject';
 export * from './types/object/GetUserProfileObject';
 export * from './types/object/GetUserFollowingObject';
 export * from './types/object/GetSearchForUserObject';
+export * from "./types/object/GetUserChats"
 
 //Guards
 export * from './guards/auth.guard';

@@ -13,6 +13,28 @@ import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Model, Types } from 'mongoose';
 const CREATE_MESSAGE = 'createMessageToChat';
+interface IUser {
+  _id: Types.ObjectId | string;
+  userName: string;
+  // diğer kullanıcı alanları...
+}
+
+interface IMessage {
+  _id: Types.ObjectId | string;
+  content: string;
+  sender: IUser | Types.ObjectId | string;
+  // diğer mesaj alanları...
+}
+
+interface IChat {
+  _id: Types.ObjectId | string;
+  participants: Array<IUser | Types.ObjectId | string>;
+  messages: Array<IMessage | Types.ObjectId | string>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// type ChatDocument = Document & IChat;
 @Injectable()
 export class ChatService {
   constructor(
@@ -25,17 +47,20 @@ export class ChatService {
   ) {}
 
   async createChat(participantIds: string[]): Promise<Chat> {
-    if (participantIds.length < 2) {
+    const participantObjectIds = participantIds.map(
+      (participantId) => new Types.ObjectId(participantId),
+    );
+    if (participantObjectIds.length < 2) {
       throw new RpcException({
         message: 'A chat must have at least 2 participants',
         statusCode: HttpStatus.BAD_REQUEST,
       });
     }
 
-    if (participantIds.length === 2) {
+    if (participantObjectIds.length === 2) {
       // İki kişi arasındaki chat için, mevcut bir chat var mı kontrol et
       const existingChat = await this.chatModel.findOne({
-        participants: { $all: participantIds, $size: 2 },
+        participants: { $all: participantObjectIds, $size: 2 },
       });
 
       if (existingChat) {
@@ -44,14 +69,14 @@ export class ChatService {
     }
 
     const newChat = new this.chatModel({
-      participants: participantIds,
+      participants: participantObjectIds,
       messages: [],
-      isGroupChat: participantIds.length > 2,
+      isGroupChat: participantObjectIds.length > 2,
     });
     await newChat.save();
 
     await this.userModel.updateMany(
-      { _id: { $in: participantIds } },
+      { _id: { $in: participantObjectIds } },
       { $push: { chats: newChat._id } },
     );
 
@@ -91,8 +116,8 @@ export class ChatService {
     }
 
     const newMessage = new this.messageModel({
-      sender: senderId,
-      chat: chatId,
+      sender: new Types.ObjectId(senderId),
+      chat: new Types.ObjectId(chatId),
       content: content,
     });
     await newMessage.save();
@@ -119,5 +144,64 @@ export class ChatService {
       },
     });
     return newMessage;
+  }
+
+  async getChats(currentUserId: string) {
+    const chats = await this.chatModel
+      .aggregate([
+        {
+          $match: {
+            participants: new Types.ObjectId(currentUserId),
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'participants',
+            foreignField: '_id',
+            as: 'participants',
+          },
+        },
+        {
+          $lookup: {
+            from: 'messages',
+            localField: 'messages',
+            foreignField: '_id',
+            pipeline: [
+              // { $match: { $expr: { $eq: ['$chatId', '$$chatId'] } } },
+              { $sort: { createdAt: -1 } },
+              { $limit: 1 },
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'sender',
+                  foreignField: '_id',
+                  as: 'sender',
+                },
+              },
+              { $unwind: '$sender' },
+              {
+                $project: {
+                  content: 1,
+                  createdAt: 1,
+                  'sender._id': 1,
+                },
+              },
+            ],
+            as: 'lastMessage',
+          },
+        },
+        {
+          $project: {
+            'participants.userName': 1,
+            'participants.profilePhoto': 1,
+            // messages: 1,
+            lastMessage: { $arrayElemAt: ['$lastMessage', 0] },
+          },
+        },
+      ])
+      .exec();
+
+    return chats;
   }
 }

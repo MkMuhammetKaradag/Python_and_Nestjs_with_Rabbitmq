@@ -29,10 +29,10 @@ export class Message {
   isRead: boolean;
 
   @Field()
-  createdAt: Date;
+  createdAt: string;
 
   @Field()
-  updatedAt: Date;
+  updatedAt: string;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

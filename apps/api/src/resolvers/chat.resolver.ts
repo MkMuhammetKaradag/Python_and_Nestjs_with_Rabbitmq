@@ -3,6 +3,7 @@ import {
   AuthGuard,
   Chat,
   CurrentUser,
+  GetUserChats,
   Message,
   PUB_SUB,
 } from '@app/shared';
@@ -98,5 +99,34 @@ export class ChatResolver {
   })
   createMessageToChat(@Args('chatId') chatId: string) {
     return this.pubSub.asyncIterator(CREATE_MESSAGE);
+  }
+
+  @Query(() => [GetUserChats])
+  @UseGuards(AuthGuard)
+  async getChtats(@CurrentUser() user: any) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const chats = await firstValueFrom<Chat[]>(
+        this.chatService.send(
+          {
+            cmd: 'get_chats',
+          },
+          {
+            currentUserId: user._id,
+          },
+        ),
+      );
+      return chats;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
   }
 }
