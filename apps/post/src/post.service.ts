@@ -294,6 +294,7 @@ export class PostService {
     // publish created comment
     this.pubSub.publish(CREATE_COMMENT_POST, {
       createCommentPost: {
+        postId: post._id,
         _id: savedComment._id,
         content: savedComment.content,
         user: {

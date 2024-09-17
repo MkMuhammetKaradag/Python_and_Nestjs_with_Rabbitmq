@@ -288,7 +288,7 @@ export class PostResolver {
         throw new BadRequestException();
       }
 
-      return true;
+      return payload.createCommentPost.postId == variables.postId;
     },
   })
   createCommentPost(@Args('postId') postId: string) {
