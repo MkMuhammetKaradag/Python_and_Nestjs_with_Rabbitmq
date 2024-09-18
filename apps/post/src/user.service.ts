@@ -197,32 +197,12 @@ export class UserService {
       {
         $match: {
           $or: [
+            { 'userInfo.isPrivate': { $ne: true } },
+            { 'userInfo._id': new Types.ObjectId(user._id) },
             {
               'userInfo._id': {
                 $in: user.following.map((id) => new Types.ObjectId(id)),
               },
-            },
-            {
-              user: { $in: user.following.map((id) => new Types.ObjectId(id)) },
-            },
-          ],
-          $and: [
-            {
-              $or: [
-                { 'userInfo.isPrivate': { $ne: true } },
-                { 'userInfo._id': new Types.ObjectId(user._id) },
-                {
-                  'userInfo._id': {
-                    $in: user.following.map((id) => new Types.ObjectId(id)),
-                  },
-                },
-                { user: new Types.ObjectId(user._id) },
-                {
-                  user: {
-                    $in: user.following.map((id) => new Types.ObjectId(id)),
-                  },
-                },
-              ],
             },
           ],
         },
@@ -236,7 +216,6 @@ export class UserService {
       },
     ];
 
-    // Use facet to get both the paginated results and the total count
     const results = await this.postModel.aggregate<AggregationResult>([
       ...pipeline,
       {
@@ -268,6 +247,4 @@ export class UserService {
 
     return { posts, totalCount };
   }
-
-
 }

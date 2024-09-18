@@ -218,6 +218,12 @@ type GetChatMessagesObject {
   currentPage: Float!
 }
 
+type VideoCallNotification {
+  chatId: String!
+  participants: [String!]!
+  userName: String!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -289,6 +295,8 @@ type Mutation {
   checkHumanInMedia(input: CreatePostInput!): String!
   createChat(participantIds: [String!]!): Chat!
   addMessageToChat(input: AddMessageToChatInput!): Message!
+  joinVideoRoom(chatId: String!): String!
+  startVideoCall(chatId: String!): Boolean!
 }
 
 input CreateUserInput {
@@ -361,4 +369,5 @@ input AddMessageToChatInput {
 type Subscription {
   createCommentPost(postId: String!): Comment!
   createMessageToChat(chatId: String!): Message!
+  videoCallStarted(userId: String!): VideoCallNotification!
 }

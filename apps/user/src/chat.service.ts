@@ -1,6 +1,7 @@
 import {
   Chat,
   ChatDocument,
+  LivekitService,
   Message,
   MessageDocument,
   PUB_SUB,
@@ -13,6 +14,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Model, Types } from 'mongoose';
 const CREATE_MESSAGE = 'createMessageToChat';
+const VIDEO_CALL_STARTED = 'videoCallStarted';
 interface IUser {
   _id: Types.ObjectId | string;
   userName: string;
@@ -44,6 +46,7 @@ export class ChatService {
     private messageModel: Model<MessageDocument>,
 
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+    private readonly liveKitService: LivekitService,
   ) {}
 
   async createChat(participantIds: string[]): Promise<Chat> {
@@ -80,7 +83,35 @@ export class ChatService {
       { $push: { chats: newChat._id } },
     );
 
+    const roomName = `chat-${newChat._id}`;
+    try {
+      await this.liveKitService.createRoom(roomName);
+    } catch (error) {
+      throw new RpcException({
+        message: 'Livekit oluşturulurken bir hata oldu',
+        statusCode: HttpStatus.UNAUTHORIZED,
+      });
+    }
+
     return newChat;
+  }
+
+  async joinVideoRoom(joinVideoRoom: { chatId: string; userId: string }) {
+    const { chatId, userId } = joinVideoRoom;
+
+    const chat = await this.chatModel.findOne({
+      _id: chatId,
+      participants: { $in: new Types.ObjectId(userId) },
+    });
+    if (!chat) {
+      throw new RpcException({
+        message: 'Chat not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    const roomName = `chat-${chat._id}`;
+    const token = this.liveKitService.generateToken(roomName, userId);
+    return token;
   }
 
   async getChatById(chatId: string): Promise<Chat> {
@@ -250,5 +281,29 @@ export class ChatService {
       .exec();
 
     return chats;
+  }
+
+  async startVideoCall(currentUserId: string, chatId: string) {
+    const chat = await this.chatModel.findById(chatId);
+    const user = await this.userModel.findById(currentUserId);
+    if (!chat || !user) {
+      throw new RpcException({
+        message: 'Chat or user   is not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    const participants = chat.participants.filter(
+      (participant) => participant._id.toString() !== currentUserId,
+    );
+
+    this.pubSub.publish(VIDEO_CALL_STARTED, {
+      videoCallStarted: {
+        participants: participants,
+        chatId: chat._id,
+        userName: user.userName,
+      },
+    });
+
+    return true;
   }
 }

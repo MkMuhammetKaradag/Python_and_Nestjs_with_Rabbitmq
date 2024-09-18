@@ -7,15 +7,24 @@ import {
   GetUserChats,
   Message,
   PUB_SUB,
+  VideoCallNotification,
 } from '@app/shared';
 import { GetChatMessagesInput } from '@app/shared/types/input/GetChatMessagesInput';
 import { BadRequestException, Inject, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Query,
+  Resolver,
+  Subscription,
+} from '@nestjs/graphql';
 import { ClientProxy } from '@nestjs/microservices';
 import { GraphQLError } from 'graphql';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { firstValueFrom } from 'rxjs';
 const CREATE_MESSAGE = 'createMessageToChat';
+const VIDEO_CALL_STARTED = 'videoCallStarted';
 @Resolver('Chat')
 export class ChatResolver {
   constructor(
@@ -162,5 +171,91 @@ export class ChatResolver {
         },
       });
     }
+  }
+
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
+  async joinVideoRoom(
+    @Args('chatId')
+    chatId: string,
+    @CurrentUser() user: any,
+  ): Promise<string> {
+    if (!user._id) {
+      throw new BadRequestException();
+    }
+    try {
+      const token = await firstValueFrom<string>(
+        this.chatService.send(
+          {
+            cmd: 'join-videoRoom',
+          },
+          {
+            chatId,
+            userId: user._id,
+          },
+        ),
+      );
+      return token;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(AuthGuard)
+  async startVideoCall(
+    @Args('chatId') chatId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!user._id) {
+      throw new BadRequestException();
+    }
+    try {
+      const data = await firstValueFrom(
+        this.chatService.send(
+          {
+            cmd: 'start_video_call',
+          },
+          {
+            currentUserId: user._id,
+            chatId,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Subscription(() => VideoCallNotification, {
+    filter: async function (payload, variables, context) {
+      const { req, res } = context;
+      if (!req?.user) {
+        throw new BadRequestException();
+      }
+      const user = req.user; // Kullanıcıyı context üzerinden alın
+      const isUserInParticipants = await this.isUserInParticipants(
+        payload.videoCallStarted.participants,
+        user._id,
+      );
+
+      return variables.userId == user._id && isUserInParticipants;
+    },
+  })
+  videoCallStarted(@Args('userId') userId: string, @Context() context) {
+    return this.pubSub.asyncIterator(VIDEO_CALL_STARTED);
+  }
+
+  async isUserInParticipants(
+    participants: string[],
+    userId: string,
+  ): Promise<boolean> {
+    return participants.includes(userId);
   }
 }

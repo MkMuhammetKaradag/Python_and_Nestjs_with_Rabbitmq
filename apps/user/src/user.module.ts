@@ -7,6 +7,7 @@ import {
   ChatSchema,
   FollowRequest,
   FollowRequestSchema,
+  LivekitModule,
   Message,
   MessageSchema,
   MongoDBModule,
@@ -27,6 +28,7 @@ import { ChatService } from './chat.service';
     }),
     SharedModule,
     PubSubModule,
+    LivekitModule,
     SharedModule.registerRmq('POST_SERVICE', 'POST'),
     MongoDBModule.forRoot('USER', 'user'), //connectionName: 'userConnection'
     MongooseModule.forFeature(

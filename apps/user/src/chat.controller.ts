@@ -85,4 +85,33 @@ export class ChatController {
       payload.extraPassValue,
     );
   }
+
+  @MessagePattern({ cmd: 'join-videoRoom' })
+  async joinVideoRoom(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      chatId: string;
+      userId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.chatService.joinVideoRoom(payload);
+  }
+
+  @MessagePattern({ cmd: 'start_video_call' })
+  async startVideoCall(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      chatId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.chatService.startVideoCall(
+      payload.currentUserId,
+      payload.chatId,
+    );
+  }
 }
