@@ -3,4 +3,7 @@ import { InputType, Field } from '@nestjs/graphql';
 export class SignUrlInput {
   @Field()
   publicId: string;
+
+  @Field()
+  folder: string;
 }

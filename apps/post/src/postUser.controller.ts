@@ -106,6 +106,26 @@ export class PostUserController {
     }
   }
 
+  @EventPattern('upload_profile_photo')
+  async uploadProfilePhoto(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      profilePhoto: string;
+    },
+  ) {
+    try {
+      this.userService.uploadProfilePhoto(
+        payload.currentUserId,
+        payload.profilePhoto,
+      );
+      this.sharedService.acknowledgeMessage(context);
+    } catch (error) {
+      this.sharedService.nacknowledgeMessage(context);
+    }
+  }
+
   @MessagePattern({
     cmd: 'get_user_posts',
   })

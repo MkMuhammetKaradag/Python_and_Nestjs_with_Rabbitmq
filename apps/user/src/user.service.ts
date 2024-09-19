@@ -33,6 +33,20 @@ export class UserService {
     private readonly postServiceClient: ClientProxy,
   ) {}
 
+  async uploadProfilePhoto(currenrUserId: string, profilePhoto: string) {
+    const user = await this.userModel.findById(currenrUserId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    user.profilePhoto = profilePhoto;
+    await user.save();
+
+    this.emitEvent('upload_profile_photo', {
+      currentUserId: user._id,
+      profilePhoto,
+    });
+    return profilePhoto;
+  }
   async followUser(currentUserId: string, targetUserId: string) {
     try {
       const [currentUser, targetUser] = await this.findUsers(

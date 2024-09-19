@@ -106,7 +106,7 @@ export class PostResolver {
     @Args('input') input: SignUrlInput,
   ): Promise<SignUrlOutput> {
     const { signature, timestamp } =
-      await this.cloudinaryService.generateSignature(input.publicId, 'posts');
+      await this.cloudinaryService.generateSignature(input.publicId, input.folder);
     return {
       signature,
       timestamp,

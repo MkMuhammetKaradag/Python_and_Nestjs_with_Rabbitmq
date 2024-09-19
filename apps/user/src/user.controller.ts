@@ -33,7 +33,23 @@ export class UserController {
       payload.userId,
     );
   }
-
+  @MessagePattern({
+    cmd: 'upload_profile_photo',
+  })
+  async uploadProfilePhoto(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      profilePhoto: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.uploadProfilePhoto(
+      payload.currentUserId,
+      payload.profilePhoto,
+    );
+  }
   @MessagePattern({
     cmd: 'follow_user',
   })

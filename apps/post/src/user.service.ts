@@ -247,4 +247,23 @@ export class UserService {
 
     return { posts, totalCount };
   }
+
+  async uploadProfilePhoto(currenrUserId: string, profilePhoto: string) {
+    const user = await this.postUserModel.findById(currenrUserId).exec();
+    if (!user) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+    try {
+      user.profilePhoto = profilePhoto;
+      await user.save();
+    } catch (error) {
+      throw new RpcException({
+        message: error.message,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
 }

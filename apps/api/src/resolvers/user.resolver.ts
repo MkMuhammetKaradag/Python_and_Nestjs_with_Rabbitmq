@@ -230,6 +230,38 @@ export class UserResolver {
       });
     }
   }
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
+  async uploadProfilePhoto(
+    @CurrentUser() user: any,
+    @Args('profilePhoto') profilePhoto: string,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<string>(
+        this.userService.send(
+          {
+            cmd: 'upload_profile_photo',
+          },
+          {
+            currentUserId: user._id,
+            profilePhoto,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
 
   @Query(() => GetUserProfileObject)
   @UseGuards(AuthGuard)
@@ -330,7 +362,7 @@ export class UserResolver {
     }
   }
 
-  @Query(() =>GetSearchForUserObject)
+  @Query(() => GetSearchForUserObject)
   @UseGuards(AuthGuard)
   async getSearchForUser(
     @Args('input') input: GetSearchForUserInput,
