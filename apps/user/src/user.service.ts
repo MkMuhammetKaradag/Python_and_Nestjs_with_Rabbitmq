@@ -71,11 +71,20 @@ export class UserService {
 
   async unFollowUser(currentUserId: string, targetUserId: string) {
     try {
+      const isAlreadyFollowingRequest = await this.followRequestModel.findOne({
+        from: currentUserId,
+        to: targetUserId,
+        status: 'pending',
+      });
+
+      if (isAlreadyFollowingRequest) {
+        await this.removeFollowRequests(currentUserId, targetUserId);
+        return { message: 'User unfollowed successfully' };
+      }
       const [currentUser, targetUser] = await this.findUsers(
         currentUserId,
         targetUserId,
       );
-
       this.validateUnfollowAction(currentUser, targetUser);
 
       await this.removeFollower(currentUser, targetUser);
@@ -119,7 +128,7 @@ export class UserService {
 
     return user;
   }
-  private validateFollowAction(currentUser: User, targetUser: User) {
+  private async validateFollowAction(currentUser: User, targetUser: User) {
     const isAlreadyFollowing = this.isUserFollowing(
       currentUser,
       targetUser._id.toString(),
@@ -132,12 +141,14 @@ export class UserService {
     }
   }
 
-  private validateUnfollowAction(currentUser: User, targetUser: User) {
+  private async validateUnfollowAction(currentUser: User, targetUser: User) {
     const isFollowing = this.isUserFollowing(
       currentUser,
       targetUser._id.toString(),
     );
+
     if (!isFollowing) {
+      // await this.removeFollowRequests(currentUser._id, targetUser._id);
       throw new RpcException({
         message: 'You are already not following this user',
         statusCode: HttpStatus.BAD_REQUEST,
@@ -325,6 +336,14 @@ export class UserService {
       .populate('from', 'firstName lastName profilePhoto');
   }
 
+  async removeFollowRequests(currentUserId: string, userId) {
+    return this.followRequestModel.findOneAndDelete({
+      from: currentUserId,
+      to: userId,
+      status: 'pending',
+    });
+  }
+
   async setUserProfilePrivate(currentUserId: string, isPrivate: boolean) {
     try {
       const user = await this.findUser(currentUserId);
@@ -453,7 +472,17 @@ export class UserService {
 
     const result = await this.userModel.aggregate(pipeline);
 
-    return result.length > 0 ? result[0] : null;
+    let followRequestIsSent = null;
+
+    if (result[0].restricted) {
+      followRequestIsSent = !!(await this.followRequestModel.findOne({
+        from: currentUserId,
+        to: userId,
+        status: { $in: ['pending', 'accepted'] },
+      }));
+    }
+
+    return result.length > 0 ? { ...result[0], followRequestIsSent } : null;
   }
   async getUserFollowing(currentUserId: string, userId: string) {
     const pipeline = [

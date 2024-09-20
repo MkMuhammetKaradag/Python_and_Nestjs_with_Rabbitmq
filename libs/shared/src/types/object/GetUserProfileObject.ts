@@ -31,6 +31,9 @@ export class GetUserProfileObject {
   isFollowing: boolean;
 
   @Field({ nullable: true })
+  followRequestIsSent: boolean;
+
+  @Field({ nullable: true })
   chatId: string;
 
   @Field()
