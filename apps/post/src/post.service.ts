@@ -49,6 +49,7 @@ export class PostService {
   async createPost(createPost: {
     userId: string;
     title: string;
+    tags: string[];
     media: [
       {
         url: string;
@@ -64,10 +65,12 @@ export class PostService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
+
     // create post
     const post = new this.postModel({
       user: new Types.ObjectId(createPost.userId),
       title: createPost.title,
+      tags: createPost.tags,
       media: createPost.media,
     });
     return await post.save();

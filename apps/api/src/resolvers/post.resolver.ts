@@ -56,30 +56,30 @@ export class PostResolver {
     }
 
     try {
-      const data = await lastValueFrom(
-        this.imageService.send<{
-          results: {
-            url: string;
-            publicId: string;
-            human_detected: string;
-          }[];
-        }>(
-          { cmd: 'check_human_in_image' },
-          {
-            media: input.media,
-          },
-        ),
-      );
-      const filteredPublicIds = data.results
-        .filter((result) => result.human_detected !== 'no_human_detected')
-        .map((result) => result.publicId);
-      if (filteredPublicIds.length == input.media.length) {
-        throw new GraphQLError('No human detected in image');
-      }
-      await this.cloudinaryService.deleteFilesFromCloudinary(filteredPublicIds);
-      const media = input.media.filter(
-        (res) => !filteredPublicIds.includes(res.publicId),
-      );
+      // const data = await lastValueFrom(
+      //   this.imageService.send<{
+      //     results: {
+      //       url: string;
+      //       publicId: string;
+      //       human_detected: string;
+      //     }[];
+      //   }>(
+      //     { cmd: 'check_human_in_image' },
+      //     {
+      //       media: input.media,
+      //     },
+      //   ),
+      // );
+      // const filteredPublicIds = data.results
+      //   .filter((result) => result.human_detected !== 'no_human_detected')
+      //   .map((result) => result.publicId);
+      // if (filteredPublicIds.length == input.media.length) {
+      //   throw new GraphQLError('No human detected in image');
+      // }
+      // await this.cloudinaryService.deleteFilesFromCloudinary(filteredPublicIds);
+      // const media = input.media.filter(
+      //   (res) => !filteredPublicIds.includes(res.publicId),
+      // );
       const post = await firstValueFrom<Post>(
         this.postService.send(
           {
@@ -88,7 +88,8 @@ export class PostResolver {
           {
             userId: user._id,
             title: input.title,
-            media: media,
+            tags: input.tags,
+            media: input.media,
           },
         ),
       );

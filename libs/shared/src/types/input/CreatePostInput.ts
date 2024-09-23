@@ -9,6 +9,9 @@ export class CreatePostInput {
   @Field()
   title: string;
 
+  @Field(() => [String], { nullable: true })
+  tags: string[];
+
   @Field(() => [CreateMediaInput])
   media: CreateMediaInput[];
 }

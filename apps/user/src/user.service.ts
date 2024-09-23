@@ -110,7 +110,7 @@ export class UserService {
         currentUserId,
         targetUserId,
       );
-      this.validateUnfollowAction(currentUser, targetUser);
+      await this.validateUnfollowAction(currentUser, targetUser);
 
       await this.removeFollower(currentUser, targetUser);
 
@@ -190,7 +190,7 @@ export class UserService {
     const existingRequest = await this.followRequestModel.findOne({
       from: currentUserId,
       to: targetUserId,
-      status: { $in: ['pending', 'accepted'] },
+      status: { $in: ['pending'] },
     });
 
     if (existingRequest) {
@@ -320,7 +320,6 @@ export class UserService {
     requestId: string,
   ) {
     const request = await this.followRequestModel.findById(requestId);
-    console.log(requestId, currentUserId);
     if (
       !request ||
       request.to.toString() !== currentUserId ||
@@ -358,12 +357,29 @@ export class UserService {
   async getFollowRequests(currentUserId: string) {
     return this.followRequestModel
       .find({ to: currentUserId, status: 'pending' })
-      .populate('from', 'firstName lastName profilePhoto');
+      .populate('from', '_id userName firstName lastName profilePhoto');
   }
   async getFollowingRequests(currentUserId: string) {
     return this.followRequestModel
       .find({ from: currentUserId, status: 'pending' })
       .populate('to', '_id userName firstName lastName profilePhoto');
+  }
+
+  async deleteFollowingRequest(currentUserId: string, requestId: string) {
+    try {
+      await this.followRequestModel.deleteOne({
+        _id: requestId,
+        from: currentUserId,
+        status: { $in: [FollowRequestStatus.PENDING] },
+      });
+
+      return 'Following request deleted';
+    } catch (error) {
+      this.handleUserActionError(
+        error,
+        'An error occurred while processing the delete following request',
+      );
+    }
   }
 
   async removeFollowRequests(currentUserId: string, userId) {

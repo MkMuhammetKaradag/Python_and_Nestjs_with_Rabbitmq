@@ -28,6 +28,7 @@ export class PostController {
     createPost: {
       userId: string;
       title: string;
+      tags: string[];
       media: [
         {
           url: string;

@@ -263,6 +263,38 @@ export class UserResolver {
   }
   @Mutation(() => String)
   @UseGuards(AuthGuard)
+  async deleteFollowingRequests(
+    @CurrentUser() user: any,
+    @Args('requestId') requestId: string,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<string>(
+        this.userService.send(
+          {
+            cmd: 'delete_following_request',
+          },
+          {
+            currentUserId: user._id,
+            requestId,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+  @Mutation(() => String)
+  @UseGuards(AuthGuard)
   async setUserProfilePrivate(
     @CurrentUser() user: any,
     @Args('isPrivate') isPrivate: boolean,

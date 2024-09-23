@@ -167,7 +167,27 @@ export class UserController {
     },
   ) {
     this.sharedService.acknowledgeMessage(context);
-    return this.userService.getFollowingRequests(getFollowRequests.currentUserId);
+    return this.userService.getFollowingRequests(
+      getFollowRequests.currentUserId,
+    );
+  }
+
+  @MessagePattern({
+    cmd: 'delete_following_request',
+  })
+  async deleteFollowingRequests(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      requestId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.deleteFollowingRequest(
+      payload.currentUserId,
+      payload.requestId,
+    );
   }
   @MessagePattern({
     cmd: 'set_user_profile_private',

@@ -288,6 +288,7 @@ type Mutation {
   unFollowUser(targetUserId: String!): String!
   acceptFollowRequest(requestId: String!): String!
   rejectFollowRequest(requestId: String!): String!
+  deleteFollowingRequests(requestId: String!): String!
   setUserProfilePrivate(isPrivate: Boolean!): String!
   uploadProfilePhoto(profilePhoto: String!): String!
   createPost(input: CreatePostInput!): Post!
@@ -348,6 +349,7 @@ input UpdateUserProfileInput {
 
 input CreatePostInput {
   title: String!
+  tags: [String!]
   media: [CreateMediaInput!]!
 }
 
