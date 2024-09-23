@@ -41,6 +41,7 @@ export * from './types/input/GetUserPostsInput';
 export * from './types/input/GetPostCommentsInput';
 export * from './types/input/GetSearchForUserInput';
 export * from './types/input/AddMessageToChatInput';
+export * from './types/input/UpdateUserProfileInput';
 //ObjectTypes
 export * from './types/object/RegisterUserObject';
 export * from './types/object/LoginUserObject';
@@ -55,7 +56,7 @@ export * from './types/object/GetUserFollowingObject';
 export * from './types/object/GetSearchForUserObject';
 export * from './types/object/GetUserChats';
 export * from './types/object/GetChatMessagesObject';
-export * from "./types/object/VideoCallNotificationObject"
+export * from './types/object/VideoCallNotificationObject';
 
 //Guards
 export * from './guards/auth.guard';

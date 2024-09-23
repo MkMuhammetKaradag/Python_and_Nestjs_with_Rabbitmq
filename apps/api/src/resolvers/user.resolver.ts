@@ -8,6 +8,7 @@ import {
   GetSearchForUserObject,
   GetUserFollowingObject,
   GetUserProfileObject,
+  UpdateUserProfileInput,
   User,
 } from '@app/shared';
 import { ClientProxy } from '@nestjs/microservices';
@@ -27,6 +28,40 @@ export class UserResolver {
     return `Merhaba , bu veri korunuyor!`;
   }
 
+  @Mutation(() => User)
+  @UseGuards(AuthGuard)
+  async updateUserProfile(
+    @Args('input') input: UpdateUserProfileInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+
+    try {
+      const data = await firstValueFrom<User>(
+        this.userService.send(
+          {
+            cmd: 'update_user_profile',
+          },
+          {
+            currentUserId: user._id,
+            ...input,
+          },
+        ),
+      );
+
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
   @Mutation(() => String)
   @UseGuards(AuthGuard)
   async followUser(
@@ -197,7 +232,35 @@ export class UserResolver {
       });
     }
   }
+  @Query(() => [FollowRequest])
+  @UseGuards(AuthGuard)
+  async getFollowingRequests(@CurrentUser() user: any) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<FollowRequest[]>(
+        this.userService.send(
+          {
+            cmd: 'get_following_request',
+          },
+          {
+            currentUserId: user._id,
+          },
+        ),
+      );
 
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
   @Mutation(() => String)
   @UseGuards(AuthGuard)
   async setUserProfilePrivate(

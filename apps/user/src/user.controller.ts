@@ -34,6 +34,29 @@ export class UserController {
     );
   }
   @MessagePattern({
+    cmd: 'update_user_profile',
+  })
+  async updateUserProfile(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      userName: string;
+      firstName: string;
+      lastName: string;
+      isPrivate: boolean;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.updateUserProfile(
+      payload.currentUserId,
+      payload.userName,
+      payload.firstName,
+      payload.lastName,
+      payload.isPrivate,
+    );
+  }
+  @MessagePattern({
     cmd: 'upload_profile_photo',
   })
   async uploadProfilePhoto(
@@ -133,7 +156,19 @@ export class UserController {
     this.sharedService.acknowledgeMessage(context);
     return this.userService.getFollowRequests(getFollowRequests.currentUserId);
   }
-
+  @MessagePattern({
+    cmd: 'get_following_request',
+  })
+  async getFollowingRequests(
+    @Ctx() context: RmqContext,
+    @Payload()
+    getFollowRequests: {
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.getFollowingRequests(getFollowRequests.currentUserId);
+  }
   @MessagePattern({
     cmd: 'set_user_profile_private',
   })

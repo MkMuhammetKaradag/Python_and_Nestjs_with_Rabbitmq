@@ -32,11 +32,36 @@ export class UserService {
     @Inject('POST_SERVICE')
     private readonly postServiceClient: ClientProxy,
   ) {}
+  async updateUserProfile(
+    currentUserId: string,
+    userName: string,
+    firstName: string,
+    lastName: string,
+    isPrivate: boolean,
+  ) {
+    const user = await this.userModel.findById(currentUserId);
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    user.userName = userName;
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.isPrivate = isPrivate;
+    const savedUser = await user.save();
+
+    return savedUser;
+  }
 
   async uploadProfilePhoto(currenrUserId: string, profilePhoto: string) {
     const user = await this.userModel.findById(currenrUserId).exec();
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
     user.profilePhoto = profilePhoto;
     await user.save();
@@ -334,6 +359,11 @@ export class UserService {
     return this.followRequestModel
       .find({ to: currentUserId, status: 'pending' })
       .populate('from', 'firstName lastName profilePhoto');
+  }
+  async getFollowingRequests(currentUserId: string) {
+    return this.followRequestModel
+      .find({ from: currentUserId, status: 'pending' })
+      .populate('to', '_id userName firstName lastName profilePhoto');
   }
 
   async removeFollowRequests(currentUserId: string, userId) {
