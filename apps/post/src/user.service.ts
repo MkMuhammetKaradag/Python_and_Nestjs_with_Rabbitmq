@@ -266,4 +266,44 @@ export class UserService {
       });
     }
   }
+  async updateUserProfile(
+    currentUserId: string,
+    userName: string,
+    firstName: string,
+    lastName: string,
+    isPrivate: boolean,
+  ) {
+    const user = await this.postUserModel.findById(currentUserId);
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    try {
+      user.userName = userName;
+      user.firstName = firstName;
+      user.lastName = lastName;
+      user.isPrivate = isPrivate;
+      await user.save();
+    } catch (error) {
+      throw new RpcException({
+        message: error.message,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  async changeUserInterests(currentUserId: string, interests: string[]) {
+    const user = await this.postUserModel.findById(currentUserId);
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    user.interests = interests;
+    await user.save();
+  }
 }

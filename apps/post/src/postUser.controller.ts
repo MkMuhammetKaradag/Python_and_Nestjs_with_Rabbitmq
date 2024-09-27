@@ -125,7 +125,51 @@ export class PostUserController {
       this.sharedService.nacknowledgeMessage(context);
     }
   }
+  @EventPattern('update_user_profile')
+  async updateUserProfile(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      userName: string;
+      firstName: string;
+      lastName: string;
+      isPrivate: boolean;
+    },
+  ) {
+    try {
+      this.userService.updateUserProfile(
+        payload.currentUserId,
+        payload.userName,
+        payload.firstName,
+        payload.lastName,
+        payload.isPrivate,
+      );
+      this.sharedService.acknowledgeMessage(context);
+    } catch (error) {
+      this.sharedService.nacknowledgeMessage(context);
+    }
+  }
 
+  @EventPattern('change_user_interests')
+  async changeUserInterests(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      interests: string[];
+    },
+  ) {
+    try {
+      this.userService.changeUserInterests(
+        payload.currentUserId,
+        payload.interests
+      );
+      this.sharedService.acknowledgeMessage(context);
+    } catch (error) {
+      this.sharedService.nacknowledgeMessage(context);
+    }
+  }
   @MessagePattern({
     cmd: 'get_user_posts',
   })

@@ -51,7 +51,13 @@ export class UserService {
     user.lastName = lastName;
     user.isPrivate = isPrivate;
     const savedUser = await user.save();
-
+    this.emitEvent('update_user_profile', {
+      currentUserId: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userName: user.userName,
+      isPrivate: user.isPrivate,
+    });
     return savedUser;
   }
 
@@ -65,7 +71,10 @@ export class UserService {
     }
     user.interests = interests;
     const savedUser = await user.save();
-
+    this.emitEvent('change_user_interests', {
+      currentUserId: user._id,
+      interests: interests,
+    });
     return savedUser.interests;
   }
 
