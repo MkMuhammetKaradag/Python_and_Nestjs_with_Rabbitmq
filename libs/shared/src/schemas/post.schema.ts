@@ -59,8 +59,8 @@ export class Post {
   @Field(() => [String])
   tags: string[];
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
-  @Field(() => [User], { nullable: true })
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Like' }] })
+  @Field(() => [Like], { nullable: true })
   likes: Types.ObjectId[];
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Comment' }] })
@@ -75,7 +75,7 @@ export const PostSchema = SchemaFactory.createForClass(Post);
 PostSchema.pre('save', function (next) {
   // this.likes dizisini al
   const likes = this.likes as Types.ObjectId[];
-  
+
   // Benzersiz ID'leri al
   const uniqueLikes = [...new Set(likes.map((id) => id.toString()))];
 

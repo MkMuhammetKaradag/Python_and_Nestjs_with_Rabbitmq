@@ -63,6 +63,13 @@ enum MediaType {
   VIDEO
 }
 
+type Like {
+  _id: ID!
+  user: User!
+  post: Post!
+  createdAt: DateTime!
+}
+
 type Comment {
   _id: ID!
   user: User!
@@ -83,7 +90,7 @@ type Post {
   createdAt: String!
   updatedAt: String!
   tags: [String!]!
-  likes: [User!]
+  likes: [Like!]
   comments: [Comment!]
   score: Float!
 }

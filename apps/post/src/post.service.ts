@@ -7,20 +7,20 @@ import {
   PostDocument,
   PostStatus,
   PUB_SUB,
-  SharedService,
   User,
   UserDocument,
-  UserRole,
+  UserPostView,
+  UserPostViewDocument,
 } from '@app/shared';
+
 import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Model, Types } from 'mongoose';
-import path from 'path';
-import { StringifyOptions } from 'querystring';
+
 import { PipelineStage } from 'mongoose';
-import { userInfo } from 'os';
+
 const CREATE_COMMENT_POST = 'createCommentPost';
 
 interface AggregationResult {
@@ -41,9 +41,58 @@ export class PostService {
     private postLikeModel: Model<LikeDocument>,
     @InjectModel(Comment.name, 'post')
     private postCommentModel: Model<CommentDocument>,
-
-    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+    @InjectModel(UserPostView.name, 'post')
+    private userPostViewModel: Model<UserPostViewDocument>,
+    @Inject(PUB_SUB)
+    private readonly pubSub: RedisPubSub,
   ) {}
+
+  // async updateUserInterests(userId: string): Promise<string[]> {
+  //   const user = await this.postUserModel.findById(userId);
+  //   if (!user) {
+  //     throw new RpcException({
+  //       message: 'User  Not Found',
+  //       statusCode: HttpStatus.NOT_FOUND,
+  //     });
+  //   }
+
+  //   // En çok beğenilen postları al
+  //   const likedPosts = await this.postModel.find({ likes: userId })
+  //     .limit(10)
+  //     .select('tags');
+
+  //   // Kullanıcı tarafından en çok ziyaret edilen postları al
+  //   const mostViewedPosts = await this.userPostViewModel.find({ user: userId })
+  //     .sort({ viewCount: -1 })
+  //     .limit(10)
+  //     .populate('post', 'tags')
+  //     .lean();
+
+  //   // Tüm tagları topla ve say
+  //   const tagCounts = new Map<string, number>();
+  //   likedPosts.forEach(post => {
+  //     post.tags.forEach(tag => {
+  //       tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+  //     });
+  //   });
+  //   mostViewedPosts.forEach(view => {
+  //     (view.post as any).tags.forEach(tag => {
+  //       tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+  //     });
+  //   });
+
+  //   // En popüler 10 tag'i al
+  //   const topInterests = Array.from(tagCounts.entries())
+  //     .sort((a, b) => b[1] - a[1])
+  //     .slice(0, 10)
+  //     .map(([tag]) => tag);
+
+  //   // Kullanıcının ilgi alanlarını güncelle
+  //   user.interests = topInterests;
+  //   await user.save();
+
+  //   return topInterests;
+  // }
 
   //post creation function
   async createPost(createPost: {
@@ -81,12 +130,11 @@ export class PostService {
     const pipeline: PipelineStage[] = [
       {
         $match: {
-          _id: new Types.ObjectId(postId), // Fetch data matched with postId
+          _id: new Types.ObjectId(postId),
         },
       },
       {
         $lookup: {
-          // Matching the post owner with the user table
           from: 'users',
           localField: 'user',
           foreignField: '_id',
@@ -98,7 +146,14 @@ export class PostService {
       },
       {
         $lookup: {
-          // Checking whether the user is following the owner of the post
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'likes',
+        },
+      },
+      {
+        $lookup: {
           from: 'users',
           let: { userId: '$user._id' },
           pipeline: [
@@ -132,26 +187,15 @@ export class PostService {
       },
       {
         $addFields: {
-          // Adding the number of likes and comments of the post as a new field
-          likeCount: { $size: { $ifNull: ['$likes', []] } },
+          likeCount: { $size: '$likes' },
           commentCount: { $size: { $ifNull: ['$comments', []] } },
           isLiked: {
-            $cond: {
-              if: {
-                $in: [
-                  new Types.ObjectId(currentUserId),
-                  { $ifNull: ['$likes', []] },
-                ],
-              },
-              then: true,
-              else: false,
-            },
+            $in: [new Types.ObjectId(currentUserId), '$likes.user'],
           },
         },
       },
       {
         $project: {
-          // determining areas to return
           _id: 1,
           title: 1,
           media: 1,
@@ -219,16 +263,32 @@ export class PostService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
-
-    if (post.likes.includes(new Types.ObjectId(addLike.userId))) {
+    const isLiked = await this.postLikeModel.findOne({
+      post: post._id,
+      user: user._id,
+    });
+    // if (post.likes.includes(new Types.ObjectId(addLike.userId))) {
+    //   throw new RpcException({
+    //     message: 'User has  liked this post',
+    //     statusCode: HttpStatus.BAD_REQUEST,
+    //   });
+    // }
+    if (isLiked) {
       throw new RpcException({
         message: 'User has  liked this post',
         statusCode: HttpStatus.BAD_REQUEST,
       });
     }
+    const postLike = new this.postLikeModel({
+      post: post._id,
+      user: user._id,
+    });
+    // if the user has not liked the post before, add the like to the post
+    await postLike.save();
+
     await this.postModel.findByIdAndUpdate(
       addLike.postId,
-      { $addToSet: { likes: user._id } },
+      { $addToSet: { likes: postLike._id } },
       { new: true },
     );
     return 'success';
@@ -247,7 +307,19 @@ export class PostService {
       });
     }
 
-    if (!post.likes.includes(new Types.ObjectId(removeData.userId))) {
+    // if (!post.likes.includes(new Types.ObjectId(removeData.userId))) {
+    //   throw new RpcException({
+    //     message: 'User has not liked this post',
+    //     statusCode: HttpStatus.BAD_REQUEST,
+    //   });
+    // }
+
+    const deletedLike = await this.postLikeModel.findOneAndDelete({
+      post: post._id,
+      user: user._id,
+    });
+
+    if (!deletedLike) {
       throw new RpcException({
         message: 'User has not liked this post',
         statusCode: HttpStatus.BAD_REQUEST,
@@ -255,7 +327,7 @@ export class PostService {
     }
     await this.postModel.findByIdAndUpdate(
       removeData.postId,
-      { $pull: { likes: user._id } },
+      { $pull: { likes: deletedLike._id } },
       { new: true },
     );
 
