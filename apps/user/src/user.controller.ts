@@ -56,6 +56,25 @@ export class UserController {
       payload.isPrivate,
     );
   }
+
+  @MessagePattern({
+    cmd: 'change_user_interests',
+  })
+  async changeUserInterests(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+      interests: string[];
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.changeUserInterests(
+      payload.currentUserId,
+      payload.interests,
+    );
+  }
+
   @MessagePattern({
     cmd: 'upload_profile_photo',
   })

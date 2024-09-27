@@ -2,6 +2,7 @@ import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
 import { Inject, UseGuards } from '@nestjs/common';
 import {
   AuthGuard,
+  ChangeUserInterestsInput,
   CurrentUser,
   FollowRequest,
   GetSearchForUserInput,
@@ -49,6 +50,40 @@ export class UserResolver {
           {
             currentUserId: user._id,
             ...input,
+          },
+        ),
+      );
+
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+  @Mutation(() => [String])
+  @UseGuards(AuthGuard)
+  async changeUserInterests(
+    @Args('input') input: ChangeUserInterestsInput,
+    @CurrentUser() user: any,
+  ) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+
+    try {
+      const data = await firstValueFrom<string[]>(
+        this.userService.send(
+          {
+            cmd: 'change_user_interests',
+          },
+          {
+            currentUserId: user._id,
+            interests: input.interests,
           },
         ),
       );

@@ -284,6 +284,7 @@ type Mutation {
   forgotPassword(input: ForgotPasswordInput!): String!
   resetPassword(input: ResetPasswordInput!): User!
   updateUserProfile(input: UpdateUserProfileInput!): User!
+  changeUserInterests(input: ChangeUserInterestsInput!): [String!]!
   followUser(targetUserId: String!): String!
   unFollowUser(targetUserId: String!): String!
   acceptFollowRequest(requestId: String!): String!
@@ -345,6 +346,10 @@ input UpdateUserProfileInput {
   lastName: String!
   userName: String!
   isPrivate: Boolean!
+}
+
+input ChangeUserInterestsInput {
+  interests: [String!]!
 }
 
 input CreatePostInput {

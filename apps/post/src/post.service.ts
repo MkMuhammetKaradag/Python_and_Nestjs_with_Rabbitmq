@@ -471,17 +471,17 @@ export class PostService {
       },
       {
         $match: {
-          $or: [
-            { tags: { $in: user.interests } },
-            {
-              'userInfo._id': {
-                $in: user.following.map((id) => new Types.ObjectId(id)),
-              },
-            },
-            {
-              user: { $in: user.following.map((id) => new Types.ObjectId(id)) },
-            },
-          ],
+          // $or: [
+          //   { tags: { $in: user.interests } },
+          //   {
+          //     'userInfo._id': {
+          //       $in: user.following.map((id) => new Types.ObjectId(id)),
+          //     },
+          //   },
+          //   {
+          //     user: { $in: user.following.map((id) => new Types.ObjectId(id)) },
+          //   },
+          // ],
           $and: [
             {
               $or: [

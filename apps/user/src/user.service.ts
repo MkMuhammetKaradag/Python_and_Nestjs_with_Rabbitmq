@@ -55,6 +55,20 @@ export class UserService {
     return savedUser;
   }
 
+  async changeUserInterests(currentUserId: string, interests: string[]) {
+    const user = await this.userModel.findById(currentUserId);
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    user.interests = interests;
+    const savedUser = await user.save();
+
+    return savedUser.interests;
+  }
+
   async uploadProfilePhoto(currenrUserId: string, profilePhoto: string) {
     const user = await this.userModel.findById(currenrUserId).exec();
     if (!user) {
