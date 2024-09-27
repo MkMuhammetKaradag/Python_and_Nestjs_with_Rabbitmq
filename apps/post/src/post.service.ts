@@ -47,52 +47,120 @@ export class PostService {
     private readonly pubSub: RedisPubSub,
   ) {}
 
-  // async updateUserInterests(userId: string): Promise<string[]> {
-  //   const user = await this.postUserModel.findById(userId);
-  //   if (!user) {
-  //     throw new RpcException({
-  //       message: 'User  Not Found',
-  //       statusCode: HttpStatus.NOT_FOUND,
-  //     });
-  //   }
+  async updateUserInterests(userId: string): Promise<string[]> {
+    const user = await this.postUserModel.findById(userId);
+    if (!user) {
+      throw new RpcException({
+        message: 'User  Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
 
-  //   // En çok beğenilen postları al
-  //   const likedPosts = await this.postModel.find({ likes: userId })
-  //     .limit(10)
-  //     .select('tags');
+    // Get most liked posts
+    const likedPosts = await this.postModel.aggregate([
+      {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'likes',
+        },
+      },
+      {
+        $unwind: '$likes',
+      },
+      {
+        $match: {
+          'likes.user': new Types.ObjectId(userId),
+        },
+      },
+      {
+        $sort: {
+          'likes.createdAt': -1, // The most recently liked posts will appear first
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          tags: { $first: '$tags' },
+          likeDate: { $first: '$likes.createdAt' },
+        },
+      },
+      {
+        $sort: {
+          likeDate: -1, // We are re-sorting because $group operation can break the sorting
+        },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $project: {
+          tags: 1,
+          _id: 1,
+        },
+      },
+    ]);
 
-  //   // Kullanıcı tarafından en çok ziyaret edilen postları al
-  //   const mostViewedPosts = await this.userPostViewModel.find({ user: userId })
-  //     .sort({ viewCount: -1 })
-  //     .limit(10)
-  //     .populate('post', 'tags')
-  //     .lean();
+    // Get most visited posts by user
+    const mostViewedPosts = await this.userPostViewModel
+      .find({ user: userId })
+      .sort({ viewCount: -1 })
+      .limit(10)
+      .populate('post', 'tags')
+      .lean();
 
-  //   // Tüm tagları topla ve say
-  //   const tagCounts = new Map<string, number>();
-  //   likedPosts.forEach(post => {
-  //     post.tags.forEach(tag => {
-  //       tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-  //     });
-  //   });
-  //   mostViewedPosts.forEach(view => {
-  //     (view.post as any).tags.forEach(tag => {
-  //       tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-  //     });
-  //   });
+    // Collect and count all tags
+    const tagCounts = new Map<string, number>();
+    likedPosts.forEach((post) => {
+      post.tags.forEach((tag) => {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
+    mostViewedPosts.forEach((view) => {
+      (view.post as any).tags.forEach((tag) => {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
 
-  //   // En popüler 10 tag'i al
-  //   const topInterests = Array.from(tagCounts.entries())
-  //     .sort((a, b) => b[1] - a[1])
-  //     .slice(0, 10)
-  //     .map(([tag]) => tag);
+    // Get the 10 most popular tags
+    const topInterests = Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag]) => tag);
 
-  //   // Kullanıcının ilgi alanlarını güncelle
-  //   user.interests = topInterests;
-  //   await user.save();
+    // Update user's interests
+    user.interests = topInterests;
+    user.viewCountSinceLastUpdate = 0;
+    user.likeCountSinceLastUpdate = 0;
+    await user.save();
+    // await this.userModel.findByIdAndUpdate(userId, {
+    //   $set: { viewCountSinceLastUpdate: 0, likeCountSinceLastUpdate: 0 },
+    // });
 
-  //   return topInterests;
-  // }
+    return topInterests;
+  }
+
+  async recordPostView(userId: string, postId: string): Promise<void> {
+    const [existingView, user] = await Promise.all([
+      this.userPostViewModel.findOne({ user: userId, post: postId }),
+      this.userModel.findById(userId),
+    ]);
+
+    if (existingView) {
+      existingView.viewCount += 1;
+      await existingView.save();
+    } else {
+      await this.userPostViewModel.create({ user: userId, post: postId });
+    }
+
+    user.viewCountSinceLastUpdate += 1;
+    await user.save();
+
+    if (user.viewCountSinceLastUpdate >= 50) {
+      await this.updateUserInterests(userId);
+    }
+  }
 
   //post creation function
   async createPost(createPost: {
@@ -220,7 +288,7 @@ export class PostService {
         statusCode: HttpStatus.NOT_FOUND,
       });
     }
-
+    this.recordPostView(currentUserId, postId);
     return posts[0];
   }
   async getPostComments(
@@ -291,6 +359,14 @@ export class PostService {
       { $addToSet: { likes: postLike._id } },
       { new: true },
     );
+
+    user.likeCountSinceLastUpdate += 1;
+    await user.save();
+
+    if (user.likeCountSinceLastUpdate >= 10) {
+      await this.updateUserInterests(user._id);
+    }
+
     return 'success';
   }
 
@@ -458,15 +534,19 @@ export class PostService {
         },
       },
       {
+        $lookup: {
+          from: 'likes',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'likes',
+        },
+      },
+      {
         $addFields: {
           likeCount: { $size: { $ifNull: ['$likes', []] } },
           commentCount: { $size: { $ifNull: ['$comments', []] } },
           isLiked: {
-            $cond: {
-              if: { $in: [userObjectId, { $ifNull: ['$likes', []] }] },
-              then: true,
-              else: false,
-            },
+            $in: [new Types.ObjectId(userId), '$likes.user'],
           },
         },
       },
