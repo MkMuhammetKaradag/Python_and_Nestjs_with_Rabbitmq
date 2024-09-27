@@ -14,6 +14,8 @@ import {
   SharedModule,
   SharedService,
   User,
+  UserPostView,
+  UserPostViewSchema,
   UserSchema,
 } from '@app/shared';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -35,6 +37,7 @@ import { PostUserController } from './postUser.controller';
         { name: User.name, schema: UserSchema },
         { name: Like.name, schema: LikeSchema },
         { name: Comment.name, schema: CommentSchema },
+        { name: UserPostView.name, schema: UserPostViewSchema },
       ],
       'post', // Associate with userConnection
     ),

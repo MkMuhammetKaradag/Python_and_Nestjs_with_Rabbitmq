@@ -23,6 +23,7 @@ export * from './schemas/comment.schema';
 export * from './schemas/followRequest.schema';
 export * from './schemas/chat.schema';
 export * from './schemas/message.schema';
+export * from './schemas/userPostView.schema';
 
 //InputTypes
 export * from './types/input/CreateUserInput';

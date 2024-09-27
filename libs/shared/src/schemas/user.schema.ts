@@ -98,6 +98,12 @@ export class User {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Chat' }] })
   @Field(() => [Chat], { nullable: true })
   chats: Types.ObjectId[];
+
+  @Prop({ default: 0 })
+  viewCountSinceLastUpdate: number;
+
+  @Prop({ default: 0 })
+  likeCountSinceLastUpdate: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
