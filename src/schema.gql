@@ -243,6 +243,7 @@ type Query {
   getUserFollowers(userId: String!): [GetUserFollowingObject!]!
   getSearchForUser(input: GetSearchForUserInput!): GetSearchForUserObject!
   getPost(postId: String!): GetPostObject!
+  getPostsILiked: [DiscoverPosts!]!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!
   discoverPosts(input: GetPostsFromFollowedUsersInput!): DiscoverPostsObject!
   getPostComments(input: GetPostCommentsInput!): GetPostCommentsObject!

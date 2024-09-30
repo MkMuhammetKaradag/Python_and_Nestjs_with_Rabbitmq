@@ -8,6 +8,7 @@ import {
   CreateMediaInput,
   CreatePostInput,
   CurrentUser,
+  DiscoverPosts,
   DiscoverPostsObject,
   GetPostCommentsInput,
   GetPostCommentsObject,
@@ -143,6 +144,31 @@ export class PostResolver {
         ),
       );
       return post;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: { ...error },
+      });
+    }
+  }
+
+  @Query(() => [DiscoverPosts])
+  @UseGuards(AuthGuard)
+  async getPostsILiked(@CurrentUser() user: any) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const posts = await this.postService.send(
+        {
+          cmd: 'get_posts_i_liked',
+        },
+        {
+          currentUserId: user._id,
+        },
+      );
+      return posts;
     } catch (error) {
       throw new GraphQLError(error.message, {
         extensions: { ...error },

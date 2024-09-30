@@ -59,6 +59,7 @@ export * from './types/object/GetSearchForUserObject';
 export * from './types/object/GetUserChats';
 export * from './types/object/GetChatMessagesObject';
 export * from './types/object/VideoCallNotificationObject';
+export * from './types/object/DiscoverPosts';
 
 //Guards
 export * from './guards/auth.guard';

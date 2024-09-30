@@ -52,11 +52,26 @@ export class PostController {
     },
   ) {
     this.sharedService.acknowledgeMessage(context);
-    await this.postService.getPostsILiked(getPost.currentUserId);
+
     return await this.postService.getPost(
       getPost.postId,
       getPost.currentUserId,
     );
+  }
+
+  @MessagePattern({
+    cmd: 'get_posts_i_liked',
+  })
+  async getPostsILiked(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    return await this.postService.getPostsILiked(payload.currentUserId);
   }
 
   @MessagePattern({
