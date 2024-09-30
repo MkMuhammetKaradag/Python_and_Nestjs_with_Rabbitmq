@@ -52,6 +52,7 @@ export class PostController {
     },
   ) {
     this.sharedService.acknowledgeMessage(context);
+    await this.postService.getPostsILiked(getPost.currentUserId);
     return await this.postService.getPost(
       getPost.postId,
       getPost.currentUserId,

@@ -291,6 +291,70 @@ export class PostService {
     this.recordPostView(currentUserId, postId);
     return posts[0];
   }
+
+  async getPostsILiked(currentUserId: string) {
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          user: new Types.ObjectId(currentUserId),
+        },
+      },
+      {
+        $lookup: {
+          from: 'posts',
+          localField: 'post',
+          foreignField: '_id',
+          as: 'post',
+        },
+      },
+      {
+        $unwind: '$post', // Her bir post için belgeyi aç
+      },
+      {
+        $lookup: {
+          from: 'users', // users koleksiyonundan kullanıcı bilgilerini getir
+          localField: 'post.user', // post.user alanına bak
+          foreignField: '_id', // users koleksiyonundaki _id ile eşleştir
+          as: 'postUser', // Sonucu 'postUser' olarak al
+        },
+      },
+      {
+        $unwind: {
+          path: '$postUser', // Tek bir kullanıcı bekliyoruz, diziyi açalım
+          preserveNullAndEmptyArrays: true, // Eğer kullanıcı bulunamazsa boş bırak
+        },
+      },
+      {
+        $addFields: {
+          firstMedia: { $arrayElemAt: ['$post.media', 0] },
+          likeCount: { $size: { $ifNull: ['$post.likes', []] } },
+          commentCount: { $size: { $ifNull: ['$post.comments', []] } },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          'post.title': 1,
+          firstMedia: 1,
+          likeCount: 1,
+          commentCount: 1,
+          'postUser._id': 1, // Kullanıcı ID'si
+          'postUser.firstName': 1, // Kullanıcının adı
+          'postUser.lastName': 1, // Kullanıcının soyadı
+          'postUser.email': 1, // Kullanıcının email'i
+        },
+      },
+    ];
+    const posts = await this.postLikeModel.aggregate(pipeline);
+
+    if (posts.length === 0) {
+      throw new RpcException({
+        message: 'Post Not Found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    return posts[0];
+  }
   async getPostComments(
     postId: string,
     currentUserId: string,
