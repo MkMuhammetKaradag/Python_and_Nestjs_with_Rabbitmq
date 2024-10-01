@@ -24,6 +24,7 @@ export * from './schemas/followRequest.schema';
 export * from './schemas/chat.schema';
 export * from './schemas/message.schema';
 export * from './schemas/userPostView.schema';
+export * from './schemas/notification.schema';
 
 //InputTypes
 export * from './types/input/CreateUserInput';
