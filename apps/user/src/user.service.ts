@@ -2,6 +2,7 @@ import {
   FollowRequest,
   FollowRequestDocument,
   FollowRequestStatus,
+  NotificationType,
   SharedService,
   User,
   UserDocument,

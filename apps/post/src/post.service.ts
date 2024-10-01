@@ -3,6 +3,7 @@ import {
   CommentDocument,
   Like,
   LikeDocument,
+  NotificationType,
   Post,
   PostDocument,
   PostStatus,
@@ -14,7 +15,7 @@ import {
 } from '@app/shared';
 
 import { HttpStatus, Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Model, Types } from 'mongoose';
@@ -43,6 +44,10 @@ export class PostService {
     private postCommentModel: Model<CommentDocument>,
     @InjectModel(UserPostView.name, 'post')
     private userPostViewModel: Model<UserPostViewDocument>,
+
+    @Inject('POST_SERVICE')
+    private readonly postServiceClient: ClientProxy,
+
     @Inject(PUB_SUB)
     private readonly pubSub: RedisPubSub,
   ) {}
@@ -432,6 +437,14 @@ export class PostService {
       await this.updateUserInterests(user._id);
     }
 
+    this.notificationEmitEvent('create_notification', {
+      senderId: user._id,
+      recipientId: post.user,
+      type: NotificationType.LIKE,
+      contentId: postLike._id,
+      contentType: 'Like',
+      message: `${user.userName} gönderinizi beğendi.`,
+    });
     return 'success';
   }
 
@@ -807,5 +820,9 @@ export class PostService {
     const totalCount = results[0].totalCount[0]?.count || 0;
 
     return { posts, totalCount };
+  }
+
+  private notificationEmitEvent(cmd: string, payload: any) {
+    this.postServiceClient.emit(cmd, payload);
   }
 }

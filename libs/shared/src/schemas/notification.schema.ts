@@ -35,3 +35,4 @@ export class Notification extends Document {
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
+export type NotificationDocument = Notification & Document;

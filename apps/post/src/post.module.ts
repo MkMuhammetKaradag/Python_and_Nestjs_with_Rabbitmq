@@ -8,6 +8,8 @@ import {
   Like,
   LikeSchema,
   MongoDBModule,
+  Notification,
+  NotificationSchema,
   Post,
   PostSchema,
   PubSubModule,
@@ -21,6 +23,8 @@ import {
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserService } from './user.service';
 import { PostUserController } from './postUser.controller';
+import { NotificationService } from './notification.service';
+import { NotificationController } from './notification.controller';
 
 @Module({
   imports: [
@@ -29,6 +33,7 @@ import { PostUserController } from './postUser.controller';
     }),
     SharedModule,
     PubSubModule,
+    SharedModule.registerRmq('POST_SERVICE', 'POST'),
     MongoDBModule.forRoot('USER', 'user'), // connectionName: 'authConnection'
     MongoDBModule.forRoot('POST', 'post'), //connectionName: 'userConnection'
     MongooseModule.forFeature(
@@ -38,6 +43,7 @@ import { PostUserController } from './postUser.controller';
         { name: Like.name, schema: LikeSchema },
         { name: Comment.name, schema: CommentSchema },
         { name: UserPostView.name, schema: UserPostViewSchema },
+        { name: Notification.name, schema: NotificationSchema },
       ],
       'post', // Associate with userConnection
     ),
@@ -46,10 +52,11 @@ import { PostUserController } from './postUser.controller';
       'user', // authConnection bağlantısı ile ilişkilendir
     ),
   ],
-  controllers: [PostController, PostUserController],
+  controllers: [PostController, PostUserController, NotificationController],
   providers: [
     PostService,
     UserService,
+    NotificationService,
     {
       provide: 'SharedServiceInterface',
       useClass: SharedService,
