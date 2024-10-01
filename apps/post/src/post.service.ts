@@ -441,8 +441,11 @@ export class PostService {
       senderId: user._id,
       recipientId: post.user,
       type: NotificationType.LIKE,
-      contentId: postLike._id,
-      contentType: 'Like',
+      content: {
+        _id: post._id,
+        createdAt: postLike.createdAt,
+      },
+      contentType: 'Post',
       message: `${user.userName} gönderinizi beğendi.`,
     });
     return 'success';
@@ -538,8 +541,11 @@ export class PostService {
       senderId: user._id,
       recipientId: post.user,
       type: NotificationType.COMMENT,
-      contentId: savedComment._id,
-      contentType: 'Comment',
+      content: {
+        _id: post._id,
+        content: savedComment.content,
+      },
+      contentType: 'Post',
       message: `${user.userName} gönderinize yorum yaptı`,
     });
     return savedComment;

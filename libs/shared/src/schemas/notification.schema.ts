@@ -64,7 +64,7 @@ export class Notification extends Document {
 
   @Prop({ type: Types.ObjectId, refPath: 'contentType' })
   @Field(() => Content, { nullable: true })
-  contentId: typeof Content;
+  content: typeof Content;
 
   @Prop({ type: String, enum: ['Post', 'Comment', 'User', 'Like'] })
   @Field()

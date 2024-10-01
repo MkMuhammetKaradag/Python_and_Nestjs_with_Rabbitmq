@@ -1,6 +1,6 @@
 import { Controller, Inject } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { NotificationType, SharedService } from '@app/shared';
+import { Content, NotificationType, SharedService } from '@app/shared';
 import {
   Ctx,
   EventPattern,
@@ -25,7 +25,7 @@ export class NotificationController {
       recipientId: string;
       senderId: string;
       type: NotificationType;
-      contentId: string;
+      content: typeof Content;
       contentType: string;
       message: string;
     },
@@ -35,7 +35,7 @@ export class NotificationController {
         payload.recipientId,
         payload.senderId,
         payload.type,
-        payload.contentId,
+        payload.content,
         payload.contentType,
         payload.message,
       );
@@ -62,5 +62,19 @@ export class NotificationController {
     return await this.notificationService.getNotificationsForUser(
       payload.currentUserId,
     );
+  }
+
+  @MessagePattern({
+    cmd: 'mark_notification_as_read',
+  })
+  async markNotificationAsRead(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      notificationId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.notificationService.markAsRead(payload.notificationId);
   }
 }
