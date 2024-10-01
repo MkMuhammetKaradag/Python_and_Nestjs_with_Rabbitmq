@@ -20,8 +20,7 @@ export class Like {
   @Field(() => Post)
   post: Types.ObjectId;
 
-
-  @Field()
+  @Field(() => String)
   createdAt: Date;
 }
 

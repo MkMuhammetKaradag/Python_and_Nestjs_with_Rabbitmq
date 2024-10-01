@@ -51,11 +51,14 @@ export class NotificationService {
   }
 
   async getNotificationsForUser(userId: string): Promise<Notification[]> {
-    return this.notificationModel
+    const data = await this.notificationModel
       .find({ recipient: userId })
       .sort({ createdAt: -1 })
       .limit(20)
+      .populate('contentId')
       .exec();
+    console.log(data);
+    return data;
   }
 
   async markAsRead(notificationId: string): Promise<Notification> {

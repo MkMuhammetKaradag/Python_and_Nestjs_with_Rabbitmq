@@ -534,7 +534,14 @@ export class PostService {
         },
       },
     });
-
+    this.notificationEmitEvent('create_notification', {
+      senderId: user._id,
+      recipientId: post.user,
+      type: NotificationType.COMMENT,
+      contentId: savedComment._id,
+      contentType: 'Comment',
+      message: `${user.userName} gönderinize yorum yaptı`,
+    });
     return savedComment;
   }
 

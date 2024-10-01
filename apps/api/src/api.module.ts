@@ -14,6 +14,7 @@ import { UserResolver } from './resolvers/user.resolver';
 import { PostResolver } from './resolvers/post.resolver';
 import { parseCookies } from './utils';
 import { ChatResolver } from './resolvers/chat.resolver';
+import { NotificationResolver } from './resolvers/notification.resolver';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -76,6 +77,7 @@ import { ChatResolver } from './resolvers/chat.resolver';
     UserResolver,
     PostResolver,
     ChatResolver,
+    NotificationResolver,
   ],
 })
 export class ApiModule {}

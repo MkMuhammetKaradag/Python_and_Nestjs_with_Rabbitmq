@@ -67,7 +67,7 @@ type Like {
   _id: ID!
   user: User!
   post: Post!
-  createdAt: DateTime!
+  createdAt: String!
 }
 
 type Comment {
@@ -114,6 +114,18 @@ enum FollowRequestStatus {
   ACCEPTED
   REJECTED
 }
+
+type Notification {
+  _id: ID!
+  recipient: User!
+  sender: User!
+  contentId: Content
+  contentType: String!
+  message: String!
+  isRead: Boolean!
+}
+
+union Content = Post | Like | Comment
 
 type RegisterUserObject {
   activationToken: String!
@@ -250,6 +262,7 @@ type Query {
   getUserPosts(input: GetUserPostsInput!): DiscoverPostsObject!
   getChats: [GetUserChats!]!
   getChatMessage(input: GetChatMessagesInput!): GetChatMessagesObject!
+  getNotifications: [Notification!]!
 }
 
 input GetSearchForUserInput {

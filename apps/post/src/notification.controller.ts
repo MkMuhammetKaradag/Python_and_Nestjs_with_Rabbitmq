@@ -1,7 +1,13 @@
 import { Controller, Inject } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NotificationType, SharedService } from '@app/shared';
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import {
+  Ctx,
+  EventPattern,
+  MessagePattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
 
 @Controller()
 export class NotificationController {
@@ -40,5 +46,21 @@ export class NotificationController {
       this.sharedService.acknowledgeMessage(context);
       // Opsiyonel: Hata logu oluştur veya bir hata raporlama servisi kullan
     }
+  }
+
+  @MessagePattern({
+    cmd: 'get_notifications',
+  })
+  async getNotifications(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      currentUserId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return await this.notificationService.getNotificationsForUser(
+      payload.currentUserId,
+    );
   }
 }
