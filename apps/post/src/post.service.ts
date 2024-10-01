@@ -742,6 +742,17 @@ export class PostService {
               else: 0,
             },
           },
+          daysSinceCreation: {
+            $divide: [
+              {
+                $subtract: [
+                  new Date(),
+                  { $ifNull: ['$createdAt', new Date()] },
+                ],
+              },
+              1000 * 60 * 60 * 24,
+            ],
+          },
         },
       },
       {
@@ -753,14 +764,9 @@ export class PostService {
               { $multiply: ['$matchingTags', 10] },
               { $multiply: ['$isFollowing', 20] },
               {
-                $divide: [
-                  {
-                    $subtract: [
-                      new Date(),
-                      { $ifNull: ['$createdAt', new Date()] },
-                    ],
-                  },
-                  1000 * 60 * 60 * 24,
+                $multiply: [
+                  { $subtract: [30, { $min: ['$daysSinceCreation', 30] }] },
+                  5, // Tarih etkisini artırmak için çarpan
                 ],
               },
             ],
