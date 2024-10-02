@@ -25,7 +25,7 @@ interface NotificationRootValue {
 }
 export const Content = createUnionType({
   name: 'Content',
-  types: () => [Post, Like, Comment],
+  types: () => [Post, Like, Comment, User],
   resolveType(value: any, context: any) {
     // contentType bilgisini kontrol et
     const contentType = value.__typename;
@@ -38,14 +38,17 @@ export const Content = createUnionType({
           return Like;
         case 'Comment':
           return Comment;
+        case 'User':
+          return User;
       }
     }
 
     // Eğer contentType yoksa value üzerinden kontrol et
     if (value) {
+      if ('userName' in value) return User;
       if ('title' in value) return Post;
       if ('post' in value && 'user' in value) return Like;
-      if ('text' in value) return Comment;
+      if ('content' in value) return Comment;
     }
 
     return null;

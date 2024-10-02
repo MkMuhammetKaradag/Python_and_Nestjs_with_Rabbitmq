@@ -90,6 +90,8 @@ export class NotificationResolver {
         return { ...content, __typename: 'Like' }; // __typename ekleyin
       case 'Comment':
         return { ...content, __typename: 'Comment' }; // __typename ekleyin
+      case 'User':
+        return { ...content, __typename: 'User' }; // __typename ekleyin
       default:
         return null; // Geçersiz türse null döndür
     }

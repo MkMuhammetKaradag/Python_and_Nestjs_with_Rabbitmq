@@ -134,7 +134,7 @@ enum NotificationType {
   DIRECT_MESSAGE
 }
 
-union Content = Post | Like | Comment
+union Content = Post | Like | Comment | User
 
 type RegisterUserObject {
   activationToken: String!

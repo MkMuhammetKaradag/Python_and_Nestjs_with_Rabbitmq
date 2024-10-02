@@ -4,12 +4,13 @@ import {
   LivekitService,
   Message,
   MessageDocument,
+  NotificationType,
   PUB_SUB,
   User,
   UserDocument,
 } from '@app/shared';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { Model, Types } from 'mongoose';
@@ -44,7 +45,8 @@ export class ChatService {
     @InjectModel(Chat.name, 'user') private chatModel: Model<ChatDocument>,
     @InjectModel(Message.name, 'user')
     private messageModel: Model<MessageDocument>,
-
+    @Inject('POST_SERVICE')
+    private readonly postServiceClient: ClientProxy,
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
     private readonly liveKitService: LivekitService,
   ) {}
@@ -173,6 +175,19 @@ export class ChatService {
           profilePhoto: user.profilePhoto,
         },
       },
+    });
+
+    this.notificationEmitEvent('create_notification', {
+      senderId: user._id,
+      recipientId: chat.participants.find(
+        (userId) => userId.toString() != senderId,
+      ),
+      type: NotificationType.DIRECT_MESSAGE,
+      content: {
+        _id: user._id,
+      },
+      contentType: 'User',
+      message: `${user.userName} messaj attı`,
     });
     return newMessage;
   }
@@ -305,5 +320,9 @@ export class ChatService {
     });
 
     return true;
+  }
+
+  private notificationEmitEvent(cmd: string, payload: any) {
+    this.postServiceClient.emit(cmd, payload);
   }
 }
