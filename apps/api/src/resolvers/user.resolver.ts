@@ -523,4 +523,33 @@ export class UserResolver {
       });
     }
   }
+
+  @Query(() => [User])
+  @UseGuards(AuthGuard)
+  async getFriendSuggestions(@CurrentUser() user: any) {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom(
+        this.userService.send(
+          {
+            cmd: 'get_friend_suggestions',
+          },
+          {
+            userId: user._id,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
 }

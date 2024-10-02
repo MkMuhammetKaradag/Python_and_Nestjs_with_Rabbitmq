@@ -1,4 +1,10 @@
-import { createUnionType, Field, ID, ObjectType } from '@nestjs/graphql';
+import {
+  createUnionType,
+  Field,
+  ID,
+  ObjectType,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { User } from './user.schema';
@@ -45,6 +51,11 @@ export const Content = createUnionType({
     return null;
   },
 });
+registerEnumType(NotificationType, {
+  name: 'NotificationType',
+  description: 'Type of notification content',
+});
+
 @Schema({ timestamps: true })
 @ObjectType()
 export class Notification extends Document {
@@ -60,6 +71,7 @@ export class Notification extends Document {
   sender: Types.ObjectId;
 
   @Prop({ type: String, enum: NotificationType, required: true })
+  @Field(() => NotificationType)
   type: NotificationType;
 
   @Prop({ type: Types.ObjectId, refPath: 'contentType' })

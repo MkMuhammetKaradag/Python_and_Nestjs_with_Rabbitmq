@@ -281,4 +281,18 @@ export class UserController {
       payload.pageSize,
     );
   }
+
+  @MessagePattern({
+    cmd: 'get_friend_suggestions',
+  })
+  async getFriendSuggestions(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.getFriendSuggestions(payload.userId);
+  }
 }

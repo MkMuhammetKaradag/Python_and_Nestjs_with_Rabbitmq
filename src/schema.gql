@@ -119,10 +119,19 @@ type Notification {
   _id: ID!
   recipient: User!
   sender: User!
+  type: NotificationType!
   content: Content
   contentType: String!
   message: String!
   isRead: Boolean!
+}
+
+"""Type of notification content"""
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  DIRECT_MESSAGE
 }
 
 union Content = Post | Like | Comment
@@ -254,6 +263,7 @@ type Query {
   getUserFollowing(userId: String!): [GetUserFollowingObject!]!
   getUserFollowers(userId: String!): [GetUserFollowingObject!]!
   getSearchForUser(input: GetSearchForUserInput!): GetSearchForUserObject!
+  getFriendSuggestions: [User!]!
   getPost(postId: String!): GetPostObject!
   getPostsILiked: [DiscoverPosts!]!
   getPostsFromFollowedUsers(input: GetPostsFromFollowedUsersInput!): [GetPostsFromFollowedUsersObject!]!

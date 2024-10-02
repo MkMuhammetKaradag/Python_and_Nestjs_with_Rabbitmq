@@ -737,4 +737,70 @@ export class UserService {
 
     return { users, totalCount };
   }
+
+  async getFriendSuggestions(userId: string): Promise<User[]> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new RpcException({
+        message: 'User Not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+
+    const suggestions = await this.userModel.aggregate([
+      // Kullanıcının kendisini ve takip ettiklerini hariç tut
+      {
+        $match: {
+          $and: [
+            { _id: { $ne: userObjectId } },
+            {
+              _id: { $nin: user.following.map((id) => new Types.ObjectId(id)) },
+            },
+            // { isPrivate: false }
+          ],
+        },
+      },
+      // Ortak ilgi alanları ve ortak arkadaşları hesapla
+      {
+        $project: {
+          _id: 1,
+          firstName: 1,
+          lastName: 1,
+          userName: 1,
+          profilePhoto: 1,
+          commonInterestsCount: {
+            $size: { $setIntersection: ['$interests', user.interests] },
+          },
+          commonFriendsCount: {
+            $size: { $setIntersection: ['$followers', user.following] },
+          },
+          // viewCount: '$viewCountSinceLastUpdate',
+          // likeCount: '$likeCountSinceLastUpdate',
+        },
+      },
+      // Skor hesapla
+      {
+        $addFields: {
+          score: {
+            $add: [
+              { $multiply: ['$commonInterestsCount', 50] },
+              { $multiply: ['$commonFriendsCount', 5] },
+              // '$viewCount',
+              // { $multiply: ['$likeCount', 2] },
+            ],
+          },
+        },
+      },
+      // Skora göre sırala
+      { $sort: { score: -1 } },
+      // İlk 10 öneriyi al
+      { $limit: 10 },
+      // Skor alanını kaldır
+      { $project: { score: 0 } },
+    ]);
+
+    return suggestions;
+  }
 }
