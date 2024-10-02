@@ -53,6 +53,7 @@ export class NotificationService {
       this.pubSub.publish('newNotification', {
         newNotification: {
           recipient: recipientId,
+          type,
           content: {
             ...content,
             // __typename: contentType,

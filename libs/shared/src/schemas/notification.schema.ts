@@ -92,6 +92,9 @@ export class Notification extends Document {
   @Prop({ type: Boolean, default: false })
   @Field()
   isRead: boolean;
+
+  @Prop({ type: Date, default: Date.now, expires: '2d' })
+  createdAt: Date;
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
