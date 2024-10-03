@@ -36,8 +36,19 @@ export class NotificationService {
       const sender = await this.userModel
         .findById(senderId)
         .select('userName _id profilePhoto');
-      if (!sender) {
+      const recipient = await this.userModel
+        .findById(recipientId)
+        .select('status');
+
+      if (!sender || !recipient) {
         throw Error('user not Found');
+      }
+      console.log(recipient.status, type);
+      if (
+        recipient.status == 'online' &&
+        type == NotificationType.DIRECT_MESSAGE
+      ) {
+        return null;
       }
       const newNotification = new this.notificationModel({
         recipient: recipientId,

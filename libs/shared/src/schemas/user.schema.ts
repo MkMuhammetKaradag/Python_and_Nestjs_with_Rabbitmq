@@ -99,6 +99,10 @@ export class User {
   @Field(() => [Chat], { nullable: true })
   chats: Types.ObjectId[];
 
+  @Prop({ required: true, default: 'offline' })
+  @Field()
+  status: string;
+
   @Prop({ default: 0 })
   viewCountSinceLastUpdate: number;
 

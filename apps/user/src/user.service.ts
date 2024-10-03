@@ -803,4 +803,38 @@ export class UserService {
 
     return suggestions;
   }
+
+  async updateUserStatus(userId: string, status: string) {
+    try {
+      // console.log('giriş', status);
+      await this.userModel.findByIdAndUpdate(
+        {
+          _id: userId,
+        },
+        { status },
+      );
+
+      this.emitEvent('update_user_status', {
+        userId,
+        status,
+      });
+      return true;
+    } catch (error) {
+      throw new RpcException({
+        message: error.message,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+  }
+
+  async getUserStatus(userId: string) {
+    const user = await this.userModel.findById(userId).select('status');
+    if (!user) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: HttpStatus.NOT_FOUND,
+      });
+    }
+    return user.status;
+  }
 }

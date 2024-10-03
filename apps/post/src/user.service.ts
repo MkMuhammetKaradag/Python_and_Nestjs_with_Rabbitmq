@@ -306,4 +306,20 @@ export class UserService {
     user.interests = interests;
     await user.save();
   }
+  async updateUserStatus(userId: string, status: string) {
+    try {
+      await this.postUserModel.findByIdAndUpdate(
+        {
+          _id: userId,
+        },
+        { status },
+      );
+      return true;
+    } catch (error) {
+      throw new RpcException({
+        message: error.message,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
+  }
 }

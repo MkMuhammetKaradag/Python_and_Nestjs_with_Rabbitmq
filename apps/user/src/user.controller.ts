@@ -295,4 +295,33 @@ export class UserController {
     this.sharedService.acknowledgeMessage(context);
     return this.userService.getFriendSuggestions(payload.userId);
   }
+
+  @MessagePattern({
+    cmd: 'update_user_status',
+  })
+  async updateUserStatus(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+      status: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.updateUserStatus(payload.userId, payload.status);
+  }
+
+  @MessagePattern({
+    cmd: 'get_user_status',
+  })
+  async getUserStatus(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+    },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+    return this.userService.getUserStatus(payload.userId);
+  }
 }

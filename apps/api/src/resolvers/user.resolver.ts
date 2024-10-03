@@ -552,4 +552,66 @@ export class UserResolver {
       });
     }
   }
+
+  @Mutation(() => Boolean)
+  @UseGuards(AuthGuard)
+  async updateUserStatus(
+    @Args('status') status: string,
+    @CurrentUser() user: any,
+  ): Promise<boolean> {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<boolean>(
+        this.userService.send(
+          {
+            cmd: 'update_user_status',
+          },
+          {
+            userId: user._id,
+            status: status,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
+
+  @Query(() => String)
+  @UseGuards(AuthGuard)
+  async getUserStatus(@CurrentUser() user: any): Promise<string> {
+    if (!user) {
+      throw new GraphQLError('User not found', {
+        extensions: { code: 'USER_NOT_FOUND' },
+      });
+    }
+    try {
+      const data = await firstValueFrom<string>(
+        this.userService.send(
+          {
+            cmd: 'get_user_status',
+          },
+          {
+            userId: user._id,
+          },
+        ),
+      );
+      return data;
+    } catch (error) {
+      throw new GraphQLError(error.message, {
+        extensions: {
+          ...error,
+        },
+      });
+    }
+  }
 }

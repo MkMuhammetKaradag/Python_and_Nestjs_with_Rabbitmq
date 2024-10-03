@@ -23,6 +23,9 @@ export class AuthResolver {
   constructor(
     @Inject('AUTH_SERVICE')
     private readonly authService: ClientProxy,
+
+    @Inject('USER_SERVICE')
+    private readonly userService: ClientProxy,
   ) {}
 
   @Query(() => String)
@@ -74,9 +77,24 @@ export class AuthResolver {
 
   @Mutation(() => String)
   @UseGuards(AuthGuard)
-  async logout(@Context() context: { res: Response }) {
+  async logout(
+    @CurrentUser() user: any,
+    @Context() context: { res: Response },
+  ) {
     const { res } = context;
     try {
+      const data = await firstValueFrom<boolean>(
+        this.userService.send(
+          {
+            cmd: 'update_user_status',
+          },
+          {
+            userId: user._id,
+            status: 'offline',
+          },
+        ),
+      );
+
       res.clearCookie('refresh_token', {
         path: '/', // Çerezin path ayarı
         httpOnly: true, // Çerezin httpOnly ayarı (varsa)
@@ -149,8 +167,6 @@ export class AuthResolver {
     },
     @Context() context,
   ) {
-    // const { req, res } = context;
-    // console.log('req.user', req.user);
     if (!user) {
       throw new GraphQLError('User not found', {
         extensions: { code: 'USER_NOT_FOUND' },

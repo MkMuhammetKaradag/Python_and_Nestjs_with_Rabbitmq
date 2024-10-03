@@ -163,7 +163,7 @@ export class PostUserController {
     try {
       this.userService.changeUserInterests(
         payload.currentUserId,
-        payload.interests
+        payload.interests,
       );
       this.sharedService.acknowledgeMessage(context);
     } catch (error) {
@@ -190,5 +190,22 @@ export class PostUserController {
       payload.page,
       payload.pageSize,
     );
+  }
+
+  @EventPattern('update_user_status')
+  async updateUserStatus(
+    @Ctx() context: RmqContext,
+    @Payload()
+    payload: {
+      userId: string;
+      status: string;
+    },
+  ) {
+    try {
+      this.userService.updateUserStatus(payload.userId, payload.status);
+      this.sharedService.acknowledgeMessage(context);
+    } catch (error) {
+      this.sharedService.nacknowledgeMessage(context);
+    }
   }
 }
