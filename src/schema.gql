@@ -254,6 +254,11 @@ type VideoCallNotification {
   userName: String!
 }
 
+type ChangeUserStatusObject {
+  userId: ID!
+  status: String!
+}
+
 type Query {
   getQuery: String!
   getMe: User!
@@ -421,6 +426,7 @@ input AddMessageToChatInput {
 }
 
 type Subscription {
+  changeUserStatus(userId: String!): ChangeUserStatusObject!
   createCommentPost(postId: String!): Comment!
   createMessageToChat(chatId: String!): Message!
   videoCallStarted(userId: String!): VideoCallNotification!

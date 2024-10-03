@@ -287,6 +287,8 @@ export class ChatService {
         },
         {
           $project: {
+            'participants._id': 1,
+            'participants.status': 1,
             'participants.userName': 1,
             'participants.profilePhoto': 1,
             lastMessage: 1,

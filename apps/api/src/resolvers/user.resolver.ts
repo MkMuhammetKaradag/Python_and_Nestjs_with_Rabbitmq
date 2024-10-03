@@ -1,26 +1,30 @@
-import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
-import { Inject, UseGuards } from '@nestjs/common';
+import { Resolver, Query, Args, Mutation, Subscription } from '@nestjs/graphql';
+import { BadRequestException, Inject, UseGuards } from '@nestjs/common';
 import {
   AuthGuard,
   ChangeUserInterestsInput,
+  ChangeUserStatusObject,
   CurrentUser,
   FollowRequest,
   GetSearchForUserInput,
   GetSearchForUserObject,
   GetUserFollowingObject,
   GetUserProfileObject,
+  PUB_SUB,
   UpdateUserProfileInput,
   User,
 } from '@app/shared';
 import { ClientProxy } from '@nestjs/microservices';
 import { GraphQLError } from 'graphql';
 import { firstValueFrom } from 'rxjs';
-
+import { RedisPubSub } from 'graphql-redis-subscriptions';
+const CHANGE_USER_STATUS = 'changeUserStatus';
 @Resolver('User')
 export class UserResolver {
   constructor(
     @Inject('USER_SERVICE')
     private readonly userService: ClientProxy,
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
   @Query(() => String)
   @UseGuards(AuthGuard)
@@ -613,5 +617,20 @@ export class UserResolver {
         },
       });
     }
+  }
+
+  @UseGuards(AuthGuard)
+  @Subscription(() => ChangeUserStatusObject, {
+    filter: async function (payload, variables, context) {
+      const { req, res } = context;
+      if (!req?.user) {
+        throw new BadRequestException();
+      }
+
+      return payload.changeUserStatus.userId == variables.userId;
+    },
+  })
+  changeUserStatus(@Args('userId') userId: string) {
+    return this.pubSub.asyncIterator(CHANGE_USER_STATUS);
   }
 }

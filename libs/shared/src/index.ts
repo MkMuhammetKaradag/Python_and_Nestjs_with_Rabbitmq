@@ -61,6 +61,7 @@ export * from './types/object/GetUserChats';
 export * from './types/object/GetChatMessagesObject';
 export * from './types/object/VideoCallNotificationObject';
 export * from './types/object/DiscoverPosts';
+export * from './types/object/ChangeUserStatusObject';
 
 //Guards
 export * from './guards/auth.guard';

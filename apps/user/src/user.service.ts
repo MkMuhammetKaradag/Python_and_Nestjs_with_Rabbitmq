@@ -3,6 +3,7 @@ import {
   FollowRequestDocument,
   FollowRequestStatus,
   NotificationType,
+  PUB_SUB,
   SharedService,
   User,
   UserDocument,
@@ -17,8 +18,10 @@ import {
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { GraphQLError } from 'graphql';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { PipelineStage } from 'mongoose';
 import { Model, Types } from 'mongoose';
+const CHANGE_USER_STATUS = 'changeUserStatus';
 interface AggregationResult {
   paginatedResults: User[];
   totalCount: { count: number }[];
@@ -32,6 +35,9 @@ export class UserService {
 
     @Inject('POST_SERVICE')
     private readonly postServiceClient: ClientProxy,
+
+    @Inject(PUB_SUB)
+    private readonly pubSub: RedisPubSub,
   ) {}
   async updateUserProfile(
     currentUserId: string,
@@ -817,6 +823,12 @@ export class UserService {
       this.emitEvent('update_user_status', {
         userId,
         status,
+      });
+      this.pubSub.publish(CHANGE_USER_STATUS, {
+        changeUserStatus: {
+          userId,
+          status,
+        },
       });
       return true;
     } catch (error) {
