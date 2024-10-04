@@ -93,7 +93,7 @@ export class Notification extends Document {
   @Field()
   isRead: boolean;
 
-  @Prop({ type: Date, default: Date.now, expires: '2d' })
+  @Prop({ type: Date, default: Date.now, expires: 172800 })
   createdAt: Date;
 }
 
